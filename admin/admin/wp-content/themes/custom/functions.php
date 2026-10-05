@@ -171,7 +171,53 @@ add_action('login_init', 'custom_use_login_template');
 
 // Allow CORS for local frontend requests (e.g. from localhost:3000 to localhost:8080)
 add_action('init', function() {
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Headers: *");
-    header("Access-Control-Allow-Methods: *");
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    } else {
+        header("Access-Control-Allow-Origin: *");
+    }
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires, X-WP-Nonce");
+
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
+            header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+        }
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+            header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+        }
+        status_header(200);
+        exit;
+    }
+});
+
+add_filter('rest_allowed_cors_headers', function($headers) {
+    if (!is_array($headers)) {
+        $headers = [];
+    }
+    $custom_headers = [
+        'Origin',
+        'X-Requested-With',
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'Cache-Control',
+        'Pragma',
+        'Expires',
+        'X-WP-Nonce'
+    ];
+    return array_unique(array_merge($headers, $custom_headers));
+});
+
+add_filter('rest_pre_serve_request', function($value) {
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    } else {
+        header("Access-Control-Allow-Origin: *");
+    }
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires, X-WP-Nonce");
+    return $value;
 });
