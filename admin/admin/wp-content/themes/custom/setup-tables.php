@@ -458,6 +458,153 @@ function custom_setup_database_tables() {
             'stat3_label'          => 'Population Monitored'
         ]);
     }
+
+    // 30. Impact Summary Table
+    $table_impact_summary = $wpdb->prefix . 'impact_summary';
+    $sql_impact_summary = "CREATE TABLE $table_impact_summary (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_title varchar(255) DEFAULT 'Our Impact',
+        hero_description longtext DEFAULT '',
+        key_areas_title varchar(255) DEFAULT 'Key Impact Areas',
+        key_areas longtext DEFAULT '[]',
+        approach_tag varchar(255) DEFAULT 'Our Approach',
+        approach_title varchar(255) DEFAULT 'Bridging Evidence & Action',
+        approach_description longtext DEFAULT '',
+        pathway1_badge varchar(50) DEFAULT '01',
+        pathway1_title varchar(255) DEFAULT 'Research to Policy & Program',
+        pathway1_description longtext DEFAULT '',
+        pathway1_items longtext DEFAULT '[]',
+        pathway2_badge varchar(50) DEFAULT '02',
+        pathway2_title varchar(255) DEFAULT 'Research to Practice',
+        pathway2_description longtext DEFAULT '',
+        pathway2_items longtext DEFAULT '[]',
+        cta_title varchar(255) DEFAULT 'Join Us in Making a Difference',
+        cta_description longtext DEFAULT '',
+        cta_btn1_text varchar(255) DEFAULT 'Partner With Us',
+        cta_btn1_link varchar(255) DEFAULT '/contact',
+        cta_btn2_text varchar(255) DEFAULT 'Explore Our Work',
+        cta_btn2_link varchar(255) DEFAULT '/our-work',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_impact_summary);
+
+    // Seed default if empty
+    $impact_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_impact_summary");
+    if (!$impact_count || $impact_count == 0) {
+        $default_key_areas = [
+            [
+                'id' => '1',
+                'title' => 'Global Research Network',
+                'description' => 'Operates across 34 countries with 89 academic institutions and over 1,800 members, creating a massive platform for interdisciplinary public health research.',
+                'icon_color' => 'brand',
+                'bg_color' => 'brand',
+                'icon_name' => 'globe'
+            ],
+            [
+                'id' => '2',
+                'title' => 'SOMAARTH Surveillance',
+                'description' => 'Established one of the world\'s largest surveillance sites in Palwal, Haryana, covering 51 villages and a population exceeding 200,000 to monitor environmental and health transitions.',
+                'icon_color' => 'blue',
+                'bg_color' => 'green',
+                'icon_name' => 'beaker'
+            ],
+            [
+                'id' => '3',
+                'title' => 'Diagnostic Innovation',
+                'description' => 'Developed the widely used INCLEN diagnostic tool for neurodevelopmental disorders, validated and modified by AIIMS for nationwide child health assessments.',
+                'icon_color' => 'blue',
+                'bg_color' => 'blue',
+                'icon_name' => 'flask'
+            ],
+            [
+                'id' => '4',
+                'title' => 'Policy & Program Evaluation',
+                'description' => 'Conducted critical evaluations of India\'s Universal Immunization Program (UIP) and implemented research on managing neonatal sepsis and pneumonia to guide national health policy.',
+                'icon_color' => 'green',
+                'bg_color' => 'green',
+                'icon_name' => 'document'
+            ],
+            [
+                'id' => '5',
+                'title' => 'National Priority Setting',
+                'description' => 'Led a massive \'crowd-sourced\' initiative involving over 2,000 experts and 250+ institutions to define public health research priorities for the Government of India.',
+                'icon_color' => 'purple',
+                'bg_color' => 'purple',
+                'icon_name' => 'clipboard'
+            ],
+            [
+                'id' => '6',
+                'title' => 'Vaccine & COVID-19',
+                'description' => 'Actively managed clinical trials for COVID-19 vaccines (including heterologous prime-boost combinations) and sero-surveillance for Dengue and Chikungunya.',
+                'icon_color' => 'red',
+                'bg_color' => 'red',
+                'icon_name' => 'shield'
+            ]
+        ];
+
+        $default_pathway1_items = [
+            [
+                'title' => 'National Research Priority Setting (RPS)',
+                'desc' => 'Collaborated with the Indian Council of Medical Research (ICMR) to lead a nationwide crowd-sourced exercise involving 2,000+ experts to define research priorities for maternal and child health through 2025.'
+            ],
+            [
+                'title' => 'Immunization Policy',
+                'desc' => 'Evaluated the Universal Immunization Program (UIP) and provided the evidence base for the rollout of the Rotavirus Vaccine and the Intensified Mission Indradhanush (IMI).'
+            ],
+            [
+                'title' => 'National Health Programs',
+                'desc' => 'Actively assists the government in adopting strategies for the National Program for Prevention & Control of Cancer, Diabetes, Cardiovascular Diseases and Stroke (NPCDCD).'
+            ],
+            [
+                'title' => 'Childhood Pneumonia & Sepsis',
+                'desc' => 'Generated evidence to assist national governments in adopting context-sensitive strategies to reduce under-five mortality from pneumonia.'
+            ]
+        ];
+
+        $default_pathway2_items = [
+            [
+                'title' => 'INCLEN Diagnostic Tools (INDT)',
+                'desc' => 'Developed validated diagnostic instruments for neurodevelopmental disorders (e.g., ADHD, Neuromotor Impairments) that primary care physicians can use with minimal training.'
+            ],
+            [
+                'title' => 'Community Interventions',
+                'desc' => 'Translates research into practice at the SOMAARTH site by engaging ASHA workers and Panchayati officers in dialogues about high-risk pregnancies and heart attack symptoms.'
+            ],
+            [
+                'title' => 'Knowledge Translation Units',
+                'desc' => 'Established the International Institute of Global Health (IIGH) which houses a \'Policy Unit\' dedicated to turning network-generated evidence into clinical care tools and practice guidelines.'
+            ],
+            [
+                'title' => 'Diagnostic Validation',
+                'desc' => 'Partnered with AIIMS to modify and validate INCLEN tools for a wider age range (1 month to 18 years), ensuring they are practical for diverse clinical settings.'
+            ]
+        ];
+
+        $wpdb->insert($table_impact_summary, [
+            'hero_title' => 'Our Impact',
+            'hero_description' => "The INCLEN Trust measures its impact through large-scale research surveillance, policy translation, and the development of diagnostic tools that influence national health programs.\n\nKey Impact Areas: Global Research Network, SOMAARTH Surveillance Site, Diagnostic Innovation, Policy & Program Evaluation, National Research Priority Setting, Vaccine Research & COVID-19 Response.",
+            'key_areas_title' => 'Key Impact Areas',
+            'key_areas' => json_encode($default_key_areas),
+            'approach_tag' => 'Our Approach',
+            'approach_title' => 'Bridging Evidence & Action',
+            'approach_description' => 'INCLEN Trust bridges the gap between scientific evidence and public health action through two primary pathways: translating research into national policies and programs, and converting findings into clinical practice.',
+            'pathway1_badge' => '01',
+            'pathway1_title' => 'Research to Policy & Program',
+            'pathway1_description' => 'INCLEN acts as a strategic technical partner to the Government of India, ensuring that data drives national health strategies.',
+            'pathway1_items' => json_encode($default_pathway1_items),
+            'pathway2_badge' => '02',
+            'pathway2_title' => 'Research to Practice',
+            'pathway2_description' => 'The organization develops "actionable tools" that empower frontline health workers and primary care physicians to apply complex research in everyday settings.',
+            'pathway2_items' => json_encode($default_pathway2_items),
+            'cta_title' => 'Join Us in Making a Difference',
+            'cta_description' => 'Partner with INCLEN to drive global health innovation and policy change. Together, we can build a healthier future.',
+            'cta_btn1_text' => 'Partner With Us',
+            'cta_btn1_link' => '/contact',
+            'cta_btn2_text' => 'Explore Our Work',
+            'cta_btn2_link' => '/our-work'
+        ]);
+    }
 }
 
 // Hook to run during theme load or admin init

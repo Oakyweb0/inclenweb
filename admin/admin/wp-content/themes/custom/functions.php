@@ -127,7 +127,8 @@ $managers = [
     'home-manager.php',
     'about-manager.php',
     'navigation-manager.php',
-    'contact-manager.php'
+    'contact-manager.php',
+    'impact-manager.php'
 ];
 
 foreach ($managers as $manager) {
