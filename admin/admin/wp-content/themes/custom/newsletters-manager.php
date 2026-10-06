@@ -1,13 +1,12 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-resources',
         'Newsletters',
         'Newsletters',
         'manage_options',
         'newsletters',
-        'newsletters_page',
-        'dashicons-media-document',
-        32
+        'newsletters_page'
     );
 });
 

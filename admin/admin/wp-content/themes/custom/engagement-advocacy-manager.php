@@ -4,14 +4,13 @@
  */
 
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-our-work',
         'Engagement & Advocacy',
         'Engagement & Advocacy',
         'manage_options',
         'engagement-advocacy-manager',
-        'engagement_advocacy_manager_page',
-        'dashicons-networking',
-        32
+        'engagement_advocacy_manager_page'
     );
 });
 

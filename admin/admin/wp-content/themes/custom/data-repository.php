@@ -1,13 +1,12 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-resources',
         'Data Repository',
         'Data Repository',
         'manage_options',
         'data-repository',
-        'data_repository_page',
-        'dashicons-analytics',
-        36
+        'data_repository_page'
     );
 });
 

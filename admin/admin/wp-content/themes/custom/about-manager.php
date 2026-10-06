@@ -6,7 +6,7 @@
 add_action('admin_menu', function () {
     // 1. Who We Are
     add_submenu_page(
-        'group-resources',
+        'group-about',
         'Who We Are',
         'Who We Are',
         'manage_options',
@@ -14,24 +14,24 @@ add_action('admin_menu', function () {
         'about_who_we_are_page'
     );
 
-    // 2. Our Journey
+    // 2. Mission & Vision
     add_submenu_page(
-        'group-resources',
+        'group-about',
+        'Mission & Vision',
+        'Mission & Vision',
+        'manage_options',
+        'about-mission',
+        'about_mission_page'
+    );
+
+    // 3. Our Journey
+    add_submenu_page(
+        'group-about',
         'Our Journey',
         'Our Journey',
         'manage_options',
         'about-our-journey',
         'about_our_journey_page'
-    );
-
-    // 3. Mission
-    add_submenu_page(
-        'group-resources',
-        'Mission',
-        'Mission',
-        'manage_options',
-        'about-mission',
-        'about_mission_page'
     );
 });
 

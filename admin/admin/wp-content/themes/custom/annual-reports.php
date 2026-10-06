@@ -1,13 +1,12 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-resources',
         'Annual Reports',
         'Annual Reports',
         'manage_options',
         'annual-reports',
-        'annual_reports_page',
-        'dashicons-media-document',
-        31
+        'annual_reports_page'
     );
 });
 

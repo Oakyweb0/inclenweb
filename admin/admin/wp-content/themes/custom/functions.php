@@ -31,22 +31,25 @@ use Aws\S3\S3Client;
 
 // Add Parent Menus for Managers
 function custom_register_grouped_menus() {
-    add_menu_page('About', 'About', 'manage_options', 'group-resources', '', 'dashicons-database', 29);
+    add_menu_page('About', 'About', 'manage_options', 'group-about', '', 'dashicons-info', 21);
+    add_menu_page('Our Work', 'Our Work', 'manage_options', 'group-our-work', '', 'dashicons-portfolio', 22);
+    add_menu_page('Our Impact', 'Our Impact', 'manage_options', 'group-our-impact', '', 'dashicons-chart-pie', 23);
     add_menu_page('Insight', 'Insight', 'manage_options', 'group-news', '', 'dashicons-megaphone', 25);
-    add_menu_page('Careers', 'Careers', 'manage_options', 'group-careers', '', 'dashicons-businessperson', 27);
-    add_menu_page('Resources', 'Resources', 'manage_options', 'group-team', '', 'dashicons-groups', 28);
-    add_menu_page('Projects & Tools', 'Projects & Tools', 'manage_options', 'group-research', '', 'dashicons-admin-tools', 30);
+    add_menu_page('Careers', 'Careers', 'manage_options', 'group-careers', '', 'dashicons-businessperson', 26);
+    add_menu_page('Resources', 'Resources', 'manage_options', 'group-resources', '', 'dashicons-groups', 27);
+    add_menu_page('Projects & Tools', 'Projects & Tools', 'manage_options', 'group-research', '', 'dashicons-admin-tools', 28);
 }
-add_action('admin_menu', 'custom_register_grouped_menus');
+add_action('admin_menu', 'custom_register_grouped_menus', 9);
 
 // Make Parent Menus Unclickable
 function custom_make_menus_unclickable() {
     ?>
     <style>
+        #toplevel_page_group-about > a,
+        #toplevel_page_group-our-work > a,
+        #toplevel_page_group-our-impact > a,
         #toplevel_page_group-news > a,
-        #toplevel_page_group-events > a,
         #toplevel_page_group-careers > a,
-        #toplevel_page_group-team > a,
         #toplevel_page_group-resources > a,
         #toplevel_page_group-research > a {
             pointer-events: none !important;
@@ -55,7 +58,7 @@ function custom_make_menus_unclickable() {
     </style>
     <script>
         jQuery(document).ready(function($) {
-            $('#toplevel_page_group-news > a, #toplevel_page_group-events > a, #toplevel_page_group-careers > a, #toplevel_page_group-team > a, #toplevel_page_group-resources > a, #toplevel_page_group-research > a').on('click', function(e) {
+            $('#toplevel_page_group-about > a, #toplevel_page_group-our-work > a, #toplevel_page_group-our-impact > a, #toplevel_page_group-news > a, #toplevel_page_group-careers > a, #toplevel_page_group-resources > a, #toplevel_page_group-research > a').on('click', function(e) {
                 e.preventDefault();
             });
         });
@@ -64,16 +67,73 @@ function custom_make_menus_unclickable() {
 }
 add_action('admin_footer', 'custom_make_menus_unclickable');
 
-// Remove duplicate parent link from the submenus
-function custom_remove_duplicate_submenus() {
+// Remove duplicate parent links and enforce strict submenu ordering
+function custom_organize_submenus() {
+    global $submenu;
+
+    remove_submenu_page('group-about', 'group-about');
+    remove_submenu_page('group-our-work', 'group-our-work');
+    remove_submenu_page('group-our-impact', 'group-our-impact');
     remove_submenu_page('group-news', 'group-news');
-    remove_submenu_page('group-events', 'group-events');
     remove_submenu_page('group-careers', 'group-careers');
-    remove_submenu_page('group-team', 'group-team');
     remove_submenu_page('group-resources', 'group-resources');
     remove_submenu_page('group-research', 'group-research');
+
+    // Desired order for About
+    $about_order = [
+        'about-who-we-are',
+        'about-mission',
+        'home-presence',
+        'fcra-registration',
+        'governance-team-manager',
+        'about-our-journey',
+        'academic-collaborators'
+    ];
+
+    // Desired order for Our Work
+    $work_order = [
+        'home-research-areas',
+        'research-projects',
+        'somaarth-sites',
+        'capacity-building-manager',
+        'engagement-advocacy-manager',
+        'community-activities-manager'
+    ];
+
+    // Desired order for Our Impact
+    $impact_order = [
+        'impact-summary',
+        'partners-manager',
+        'key-research-findings',
+        'device-products',
+        'policy-influence',
+        'transforming-lives'
+    ];
+
+    $sort_group = function($parent_slug, $order_slugs) use (&$submenu) {
+        if (!isset($submenu[$parent_slug])) return;
+        $items = $submenu[$parent_slug];
+        $sorted = [];
+        $remaining = [];
+        
+        foreach ($items as $item) {
+            $slug = $item[2];
+            $idx = array_search($slug, $order_slugs);
+            if ($idx !== false) {
+                $sorted[$idx] = $item;
+            } else {
+                $remaining[] = $item;
+            }
+        }
+        ksort($sorted);
+        $submenu[$parent_slug] = array_merge(array_values($sorted), $remaining);
+    };
+
+    $sort_group('group-about', $about_order);
+    $sort_group('group-our-work', $work_order);
+    $sort_group('group-our-impact', $impact_order);
 }
-add_action('admin_menu', 'custom_remove_duplicate_submenus', 999);
+add_action('admin_menu', 'custom_organize_submenus', 999);
 
 // Include Setup Tables automatically
 if (file_exists(__DIR__ . '/setup-tables.php')) {
@@ -85,6 +145,8 @@ $managers = [
     'home-manager.php',
     'about-manager.php',
     'impact-manager.php',
+    'somaarth-sites-manager.php',
+    'impact-subpages-manager.php',
     'capacity-building-manager.php',
     'engagement-advocacy-manager.php',
     'community-activities-manager.php',

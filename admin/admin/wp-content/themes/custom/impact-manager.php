@@ -5,14 +5,13 @@
 
 // Register Admin Menu
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-our-impact',
         'Impact Summary',
         'Impact Summary',
         'manage_options',
         'impact-summary',
-        'impact_summary_manager_page',
-        'dashicons-chart-pie',
-        26
+        'impact_summary_manager_page'
     );
 });
 

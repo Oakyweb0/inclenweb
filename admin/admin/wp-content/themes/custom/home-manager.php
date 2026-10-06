@@ -1,62 +1,21 @@
 <?php
 // Register all Home Page submenus
 add_action('admin_menu', function () {
-    // 1. Hero Section
+    // Global Presence under About
     add_submenu_page(
-        'group-home',
-        'Hero Section',
-        'Hero Section',
-        'manage_options',
-        'home-hero',
-        'home_hero_page'
-    );
-
-
-    // 3. About Section
-    add_submenu_page(
-        'group-home',
-        'About',
-        'About',
-        'manage_options',
-        'home-about',
-        'home_about_page'
-    );
-
-    // 4. Our Presence
-    add_submenu_page(
-        'group-home',
-        'Our Presence',
-        'Our Presence',
+        'group-about',
+        'Global Presence',
+        'Global Presence',
         'manage_options',
         'home-presence',
         'home_presence_page'
     );
 
-    // 5. Strategic Collaborators
+    // Area of Work under Our Work
     add_submenu_page(
-        'group-home',
-        'Strategic Collaborators',
-        'Strategic Collaborators',
-        'manage_options',
-        'home-collaborators',
-        'home_collaborators_page'
-    );
-
-    // 6. Impact Statistics
-    add_submenu_page(
-        'group-home',
-        'Impact Statistics',
-        'Impact Statistics',
-        'manage_options',
-        'home-impact',
-        'home_impact_page'
-    );
-
-    // 7. Key Research Areas
-    add_submenu_page(
-        'group-home',
-        'Key Research Areas',
-        'Key Research Areas',
+        'group-our-work',
+        'Area of Work',
+        'Area of Work',
         'manage_options',
         'home-research-areas',
         'home_research_areas_page'

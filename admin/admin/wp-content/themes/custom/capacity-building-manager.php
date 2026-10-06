@@ -4,14 +4,13 @@
  */
 
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-our-work',
         'Capacity Building',
         'Capacity Building',
         'manage_options',
         'capacity-building-manager',
-        'capacity_building_manager_page',
-        'dashicons-welcome-learn-more',
-        31
+        'capacity_building_manager_page'
     );
 });
 

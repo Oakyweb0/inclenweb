@@ -1,9 +1,9 @@
 <?php
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-resources',
-        'Governance & Team Manager',
-        'Governance & Team',
+        'group-about',
+        'Board of Trustees & Staff',
+        'Board of Trustees & Staff',
         'manage_options',
         'governance-team-manager',
         'governance_team_manager_page'

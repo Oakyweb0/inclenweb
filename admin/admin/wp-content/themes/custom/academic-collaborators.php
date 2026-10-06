@@ -1,9 +1,9 @@
 <?php
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-resources',
-        'Academic&nbsp;Collaborator',
-        'Academic&nbsp;Collaborator',
+        'group-about',
+        'Academic Collaborators',
+        'Academic Collaborators',
         'manage_options',
         'academic-collaborators',
         'academic_collaborators_page'

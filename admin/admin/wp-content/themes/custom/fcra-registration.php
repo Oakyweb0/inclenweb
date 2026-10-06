@@ -1,13 +1,13 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    // Registered under About menu
+    add_submenu_page(
+        'group-about',
         'FCRA & Registration',
         'FCRA & Registration',
         'manage_options',
         'fcra-registration',
-        'fcra_registration_page',
-        'dashicons-clipboard',
-        34
+        'fcra_registration_page'
     );
 });
 

@@ -1,13 +1,12 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-our-impact',
         'Device Products',
         'Device Products',
         'manage_options',
         'device-products',
-        'device_products_page',
-        'dashicons-smartphone',
-        33
+        'device_products_page'
     );
 });
 

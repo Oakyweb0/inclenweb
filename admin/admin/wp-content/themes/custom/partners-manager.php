@@ -1,30 +1,12 @@
 <?php
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-partners',
+        'group-our-impact',
         'Partners',
         'Partners',
         'manage_options',
         'partners-manager',
         'partners_manager_page'
-    );
-
-    add_submenu_page(
-        'group-partners',
-        'Industry Partnerships',
-        'Industry Partnerships',
-        'manage_options',
-        'industry-partnerships',
-        'industry_partnerships_page'
-    );
-
-    add_submenu_page(
-        'group-partners',
-        'Research Partnerships',
-        'Research Partnerships',
-        'manage_options',
-        'research-partnerships',
-        'research_partnerships_page'
     );
 });
 

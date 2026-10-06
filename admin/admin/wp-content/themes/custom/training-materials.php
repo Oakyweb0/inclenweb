@@ -1,13 +1,12 @@
 <?php
 add_action('admin_menu', function () {
-    add_menu_page(
+    add_submenu_page(
+        'group-resources',
         'Training Materials',
         'Training Materials',
         'manage_options',
         'training-materials',
-        'training_materials_page',
-        'dashicons-welcome-learn-more',
-        35
+        'training_materials_page'
     );
 });
 
