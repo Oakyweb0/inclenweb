@@ -1,0 +1,7 @@
+{
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/(public)/community-activities/page": "app/(public)/community-activities/page.js",
+  "/(public)/capacity-building/page": "app/(public)/capacity-building/page.js",
+  "/(public)/somaarth-sites/page": "app/(public)/somaarth-sites/page.js",
+  "/(public)/page": "app/(public)/page.js"
+}
