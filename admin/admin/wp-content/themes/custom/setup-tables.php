@@ -605,6 +605,372 @@ function custom_setup_database_tables() {
             'cta_btn2_link' => '/our-work'
         ]);
     }
+
+    // 31. Capacity Building Table
+    $table_capacity = $wpdb->prefix . 'capacity_building';
+    $sql_capacity = "CREATE TABLE $table_capacity (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_badge varchar(255) DEFAULT 'Est. 2012 · Global Reach',
+        hero_title varchar(255) DEFAULT 'Capacity',
+        hero_highlight varchar(255) DEFAULT 'Building',
+        hero_description longtext DEFAULT '',
+        hero_btn_text varchar(255) DEFAULT 'Explore Programs',
+        hero_btn_link varchar(255) DEFAULT '#programs',
+        focus_tag varchar(255) DEFAULT 'Core Training Programs',
+        focus_heading varchar(255) DEFAULT 'Capacity Building Focus',
+        focus_description longtext DEFAULT '',
+        focus_topics longtext DEFAULT '[]',
+        alumni_tag varchar(255) DEFAULT 'Social Proof',
+        alumni_heading varchar(255) DEFAULT 'Alumni & Past Participants',
+        alumni_description longtext DEFAULT '',
+        alumni_items longtext DEFAULT '[]',
+        cta_tag varchar(255) DEFAULT 'Advance Your Health Career',
+        cta_heading varchar(255) DEFAULT 'Get Involved Today',
+        cta_description longtext DEFAULT '',
+        cta_btn1_text varchar(255) DEFAULT 'Apply to LAMP ↗',
+        cta_btn1_link varchar(255) DEFAULT '#',
+        cta_btn2_text varchar(255) DEFAULT 'Join as Institution',
+        cta_btn2_link varchar(255) DEFAULT '#',
+        cta_btn3_text varchar(255) DEFAULT 'Explore Internships',
+        cta_btn3_link varchar(255) DEFAULT '#',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_capacity);
+
+    $default_focus_topics = [
+        [
+            'key' => 'lamp',
+            'title' => 'Leadership & Management Program (LAMP)',
+            'tag' => 'Leadership & Strategy',
+            'overview' => 'INCLEN\'s flagship leadership development initiative designed to equip mid-career healthcare professionals, project managers, and researchers with strategic leadership, communication, and management capabilities to drive health policy changes.',
+            'curriculum' => [
+                'Leadership concepts & styles',
+                'Team management & conflict resolution',
+                'Strategic planning & management',
+                'Research proposal & grant writing',
+                'Financial management & budgeting',
+                'Evidence-informed policymaking'
+            ],
+            'audience' => 'Mid-career researchers, clinical fellows, project managers, and health administrators.',
+            'duration' => '15-day intensive residential program'
+        ],
+        [
+            'key' => 'public-health',
+            'title' => 'Public Health Research',
+            'tag' => 'Epidemiology & Design',
+            'overview' => 'Fundamental and advanced training in public health research methodologies, clinical epidemiology, and study designs to produce high-impact peer-reviewed literature and evidence-based interventions.',
+            'curriculum' => [
+                'Clinical epidemiology principles',
+                'Observational & experimental study designs',
+                'Ethical guidelines & IRB approval processes',
+                'Literature reviews & meta-analyses',
+                'Scientific writing & manuscript preparation',
+                'Grant proposal development'
+            ],
+            'audience' => 'Doctoral candidates, academic health faculty, clinical investigators, and medical students.',
+            'duration' => 'Modular formats (online & offline sessions)'
+        ],
+        [
+            'key' => 'data-science',
+            'title' => 'Data Science & Biostatistics',
+            'tag' => 'Analytics & Systems',
+            'overview' => 'End-to-end training in clinical data management, database design, biostatistical analysis, and data modeling using modern computing environments and analytical programming.',
+            'curriculum' => [
+                'Biostatistics fundamentals & hypothesis testing',
+                'Clinical data quality assurance & entry control',
+                'Statistical programming (R, Stata, Python)',
+                'Database design & data schema planning',
+                'Large-scale health registry analysis',
+                'Data visualization & reporting techniques'
+            ],
+            'audience' => 'Biostatisticians, data managers, registry handlers, and research analysts.',
+            'duration' => 'Self-paced modules with hands-on labs'
+        ],
+        [
+            'key' => 'gis',
+            'title' => 'GIS Training & Health Mapping',
+            'tag' => 'Spatial Analysis',
+            'overview' => 'Training in geographic information systems (GIS) applied to public health, enabling researchers to map disease distributions, model environmental risks, and analyze spatial access to healthcare resources.',
+            'curriculum' => [
+                'GIS fundamentals & mapping software',
+                'Geocoding & spatial database management',
+                'Disease mapping & spatial hotspot detection',
+                'Environmental health exposure modeling',
+                'Spatial accessibility analysis for health sites',
+                'Geospatial statistics & spatial clustering'
+            ],
+            'audience' => 'Epidemiologists, environmental health researchers, and urban health planners.',
+            'duration' => '5-day intensive practical workshop'
+        ],
+        [
+            'key' => 'implementation',
+            'title' => 'Implementation Research',
+            'tag' => 'Health Systems Translation',
+            'overview' => 'Training focused on translating clinical trial efficacy into real-world effectiveness within diverse health systems, understanding barriers to scale, and optimizing operational health programs.',
+            'curriculum' => [
+                'Implementation research frameworks',
+                'Barrier & facilitator identification (CFIR)',
+                'Hybrid design clinical trials',
+                'Qualitative & mixed-methods integration',
+                'Health system integration & scalability',
+                'Programmatic monitoring & evaluation'
+            ],
+            'audience' => 'Health program managers, operational researchers, and policy advisors.',
+            'duration' => 'Interactive seminar series & case workshops'
+        ],
+        [
+            'key' => 'onground',
+            'title' => 'Research Onground & Field Operations',
+            'tag' => 'Field Logistics & Cohorts',
+            'overview' => 'Practical operational training for executing large-scale community surveys, managing demographic and environmental surveillance cohorts, and coordinating field logistics ethically and efficiently.',
+            'curriculum' => [
+                'Field operations management & supervisor logistics',
+                'Demographic surveillance site operations',
+                'Household survey sampling & questionnaire execution',
+                'Community stakeholder engagement & consent systems',
+                'Ethical practices in remote & rural field sites',
+                'Real-time electronic data capture & field QA'
+            ],
+            'audience' => 'Field supervisors, research coordinators, cohort managers, and surveyors.',
+            'duration' => 'Hands-on field attachments & simulation drills'
+        ]
+    ];
+
+    $default_alumni = [
+        ['name' => 'Lorem Ipsum 1', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2015', 'theme' => 'Lorem Ipsum Theme Details'],
+        ['name' => 'Lorem Ipsum 2', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2015', 'theme' => 'Lorem Ipsum Theme Details'],
+        ['name' => 'Lorem Ipsum 3', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2014', 'theme' => 'Lorem Ipsum Theme Details'],
+        ['name' => 'Lorem Ipsum 4', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2014', 'theme' => 'Lorem Ipsum Theme Details'],
+        ['name' => 'Lorem Ipsum 5', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2013', 'theme' => 'Lorem Ipsum Theme Details'],
+        ['name' => 'Lorem Ipsum 6', 'institution' => 'Lorem Ipsum Institution', 'location' => 'Lorem Ipsum Location', 'batch' => '2013', 'theme' => 'Lorem Ipsum Theme Details']
+    ];
+
+    $capacity_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_capacity");
+    if (!$capacity_count || $capacity_count == 0) {
+        $wpdb->insert($table_capacity, [
+            'hero_badge'        => 'Est. 2012 · Global Reach',
+            'hero_title'        => 'Capacity',
+            'hero_highlight'    => 'Building',
+            'hero_description'  => 'Building the next generation of global health leaders through rigorous academic training, clinical epidemiology, and management programs.',
+            'hero_btn_text'     => 'Explore Programs',
+            'hero_btn_link'     => '#programs',
+            'focus_tag'         => 'Core Training Programs',
+            'focus_heading'     => 'Capacity Building Focus',
+            'focus_description' => 'We offer specialized training tracks designed to cultivate next-generation leaders in global health, research methods, and data systems.',
+            'focus_topics'      => json_encode($default_focus_topics),
+            'alumni_tag'        => 'Social Proof',
+            'alumni_heading'    => 'Alumni & Past Participants',
+            'alumni_description'=> 'Meet our past LAMP program participants and batches leading public health operations globally.',
+            'alumni_items'      => json_encode($default_alumni),
+            'cta_tag'           => 'Advance Your Health Career',
+            'cta_heading'       => 'Get Involved Today',
+            'cta_description'   => 'Join our global network of Clinical Epidemiology Units, apply to the next cohort of LAMP, or join as an individual member or intern.',
+            'cta_btn1_text'     => 'Apply to LAMP ↗',
+            'cta_btn1_link'     => '#',
+            'cta_btn2_text'     => 'Join as Institution',
+            'cta_btn2_link'     => '#',
+            'cta_btn3_text'     => 'Explore Internships',
+            'cta_btn3_link'     => '#'
+        ]);
+    } else {
+        // Ensure columns exist and are populated if empty
+        $existing = $wpdb->get_row("SELECT * FROM $table_capacity LIMIT 1", ARRAY_A);
+        $update_data = [];
+        if (empty($existing['focus_topics']) || $existing['focus_topics'] === '[]') {
+            $update_data['focus_topics'] = json_encode($default_focus_topics);
+        }
+        if (empty($existing['alumni_items']) || $existing['alumni_items'] === '[]') {
+            $update_data['alumni_items'] = json_encode($default_alumni);
+        }
+        if (!empty($update_data)) {
+            $wpdb->update($table_capacity, $update_data, ['id' => $existing['id']]);
+        }
+    }
+
+    // 32. Engagement & Advocacy Table
+    $table_engagement = $wpdb->prefix . 'engagement_advocacy';
+    $sql_engagement = "CREATE TABLE $table_engagement (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_badge varchar(255) DEFAULT 'Social Mobilization & Action',
+        hero_title varchar(255) DEFAULT 'Engagement &',
+        hero_highlight varchar(255) DEFAULT 'Advocacy',
+        hero_description longtext DEFAULT '',
+        belief_tag varchar(255) DEFAULT 'Our Core Belief',
+        belief_heading varchar(255) DEFAULT 'Sustainable health improvements are achieved when we work together.',
+        belief_para1 longtext DEFAULT '',
+        belief_para2 longtext DEFAULT '',
+        belief_para3 longtext DEFAULT '',
+        approach_tag varchar(255) DEFAULT 'Methodology',
+        approach_heading varchar(255) DEFAULT 'Our Approach',
+        approach_description longtext DEFAULT '',
+        approach_items longtext DEFAULT '[]',
+        pillars_tag varchar(255) DEFAULT 'Strategic Focus',
+        pillars_heading varchar(255) DEFAULT 'Strategic Pillars',
+        pillars_description longtext DEFAULT '',
+        pillars_items longtext DEFAULT '[]',
+        case_study_tag varchar(255) DEFAULT 'Real-World Results',
+        case_study_heading varchar(255) DEFAULT 'Impact Stories',
+        case_study_badge varchar(255) DEFAULT 'Lorem Ipsum Case Study',
+        case_study_title varchar(255) DEFAULT 'Lorem Ipsum Dolor Sit Amet Consectetur Adipiscing Elit',
+        case_study_description longtext DEFAULT '',
+        case_study_image varchar(1000) DEFAULT '',
+        resources_tag varchar(255) DEFAULT 'Resources',
+        resources_heading varchar(255) DEFAULT 'Publications & Policy Briefs',
+        resources_items longtext DEFAULT '[]',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_engagement);
+
+    $engagement_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_engagement");
+    if (!$engagement_count || $engagement_count == 0) {
+        $default_approaches = [
+            ['title' => 'Active Partners', 'description' => 'Engage communities as active partners throughout the study and implementation lifecycle.'],
+            ['title' => 'Stakeholder Collaboration', 'description' => 'Strengthen stakeholder collaboration across agencies, civil societies, and researchers.'],
+            ['title' => 'Actionable Evidence', 'description' => 'Generate actionable scientific evidence suitable for direct public health translation.'],
+            ['title' => 'Evidence-Informed Policy', 'description' => 'Support evidence-informed policymaking by presenting research directly to government units.'],
+            ['title' => 'Leadership Building', 'description' => 'Promote local capacity building, clinical research leadership, and institutional capability.'],
+            ['title' => 'Equitable Solutions', 'description' => 'Advocate for equitable and sustainable health solutions targeting marginalized groups.']
+        ];
+
+        $default_pillars = [
+            ['title' => 'Stakeholder Engagement', 'description' => 'Bringing together clinical researchers, doctors, civil society actors, and public agencies on a shared collaborative platform.', 'icon_name' => 'users'],
+            ['title' => 'Community Partnerships', 'description' => 'Co-designing local health interventions and programs with rural demographic study cohorts to ensure cultural relevance.', 'icon_name' => 'globe'],
+            ['title' => 'Policy Advocacy', 'description' => 'Presenting scientific data to regional ministries and international health entities to influence long-term policy adjustments.', 'icon_name' => 'document'],
+            ['title' => 'Knowledge Translation', 'description' => 'Creating visual summaries, training guides, and simplified policy briefs to translate technical laboratory clinical data for the public.', 'icon_name' => 'book']
+        ];
+
+        $default_resources = [
+            ['title' => 'Lorem Ipsum Dolor Sit Amet Policy Brief', 'meta' => 'Published: Lorem Ipsum • PDF (000 KB)', 'pdf_url' => '#', 'button_text' => 'Download Brief'],
+            ['title' => 'Consectetur Adipiscing Elit Handbook', 'meta' => 'Published: Lorem Ipsum • PDF (0.0 MB)', 'pdf_url' => '#', 'button_text' => 'Download Handbook']
+        ];
+
+        $wpdb->insert($table_engagement, [
+            'hero_badge'            => 'Social Mobilization & Action',
+            'hero_title'            => 'Engagement &',
+            'hero_highlight'        => 'Advocacy',
+            'hero_description'      => 'Translating robust research into public health action, policy frameworks, and community-led health improvements.',
+            'belief_tag'            => 'Our Core Belief',
+            'belief_heading'        => 'Sustainable health improvements are achieved when we work together.',
+            'belief_para1'          => 'At INCLEN, we believe that sustainable health improvements are achieved when communities, researchers, healthcare providers, and policymakers work together. Our engagement approach promotes meaningful participation of stakeholders throughout the research and implementation cycle, ensuring that solutions are contextually relevant, culturally appropriate, and scalable.',
+            'belief_para2'          => 'Through partnerships with communities, academic institutions, civil society organizations, and government agencies, we generate evidence that informs public health action and supports equitable health outcomes.',
+            'belief_para3'          => 'Our advocacy efforts focus on translating research evidence into policies, programs, and practices that strengthen health systems and improve the lives of vulnerable populations.',
+            'approach_tag'          => 'Methodology',
+            'approach_heading'      => 'Our Approach',
+            'approach_description'  => 'We deploy participatory, research-led, and policy-focused methodologies to advocate for sustainable health developments.',
+            'approach_items'        => json_encode($default_approaches),
+            'pillars_tag'           => 'Strategic Focus',
+            'pillars_heading'       => 'Strategic Pillars',
+            'pillars_description'   => 'Four core areas that drive our public health outreach, translation networks, and advocacy campaigns.',
+            'pillars_items'         => json_encode($default_pillars),
+            'case_study_tag'        => 'Real-World Results',
+            'case_study_heading'    => 'Impact Stories',
+            'case_study_badge'      => 'Lorem Ipsum Case Study',
+            'case_study_title'      => 'Lorem Ipsum Dolor Sit Amet Consectetur Adipiscing Elit',
+            'case_study_description'=> 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+            'case_study_image'      => 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=600',
+            'resources_tag'         => 'Resources',
+            'resources_heading'     => 'Publications & Policy Briefs',
+            'resources_items'       => json_encode($default_resources)
+        ]);
+    }
+
+    // 33. Community Activities Table
+    $table_community = $wpdb->prefix . 'community_activities';
+    $sql_community = "CREATE TABLE $table_community (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_badge varchar(255) DEFAULT 'Outreach • Education • Prevention',
+        hero_heading varchar(255) DEFAULT 'Community Activities',
+        hero_description longtext DEFAULT '',
+        hero_subdescription longtext DEFAULT '',
+        intro_heading longtext DEFAULT '',
+        intro_description longtext DEFAULT '',
+        initiatives longtext DEFAULT '[]',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_community);
+
+    $community_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_community");
+    if (!$community_count || $community_count == 0) {
+        $default_initiatives = [
+            [
+                'id'              => 'clinics',
+                'tag'             => 'Clinical Outreach',
+                'tag_style'       => 'blue',
+                'headline_prefix' => 'Accessible Care via',
+                'highlight'       => 'INCLEN Clinics',
+                'highlight_color' => 'blue',
+                'description'     => 'INCLEN operates clinics across multiple research sites such as in Palwal, Bareilly, and Mawphlang, providing accessible healthcare and supporting community-based clinical research.',
+                'image_url'       => '/images/community/1.png',
+                'image_alt'       => 'INCLEN Clinics',
+                'image_left'      => false,
+                'accent_type'     => 'stats',
+                'accent_title'    => 'Global',
+                'accent_subtitle' => 'Standard Care',
+                'accent_text'     => 'Providing essential healthcare services at the heart of the community.'
+            ],
+            [
+                'id'              => 'nikshay',
+                'tag'             => 'Social Support',
+                'tag_style'       => 'amber',
+                'headline_prefix' => 'Healing Communities:',
+                'highlight'       => 'Nikshay Mitra',
+                'highlight_color' => 'amber',
+                'description'     => 'INCLEN is a Nikshay Mitra and provides nutritional support to TB patients at its research sites in Palwal, Bareilly, and Mawphlang, contributing to improved treatment adherence and patient well-being.',
+                'image_url'       => '/images/community/2.png',
+                'image_alt'       => 'Nikshay Mitra',
+                'image_left'      => true,
+                'accent_type'     => 'dark_card',
+                'accent_title'    => 'Nutritional Aid',
+                'accent_subtitle' => 'Supporting TB Patients with Vital Food & Medical Adherence',
+                'accent_text'     => ''
+            ],
+            [
+                'id'              => 'jansamvad',
+                'tag'             => 'Community Dialogue',
+                'tag_style'       => 'blue',
+                'headline_prefix' => 'Empowering People:',
+                'highlight'       => 'Jan Samvad',
+                'highlight_color' => 'blue',
+                'description'     => 'INCLEN conducts community awareness programs to support the implementation of key national health initiatives such as immunization, RBSK (Rashtriya Bal Swasthya Karyakram), and tuberculosis control, empowering communities with knowledge and access.',
+                'image_url'       => '/images/community/3.png',
+                'image_alt'       => 'Jan Samvad',
+                'image_left'      => false,
+                'accent_type'     => 'grid',
+                'accent_title'    => 'Knowledge',
+                'accent_subtitle' => 'Impact Goal',
+                'accent_text'     => 'National Focus Area'
+            ],
+            [
+                'id'              => 'blindness',
+                'tag'             => 'Vision Care',
+                'tag_style'       => 'amber',
+                'headline_prefix' => 'Restoring Sight:',
+                'highlight'       => 'Blindness Control',
+                'highlight_color' => 'amber',
+                'description'     => "Under the Government of India's National Programme for Control of Blindness, INCLEN organizes screening camps and facilitates the distribution of spectacles to elderly individuals in need, improving vision and quality of life.",
+                'image_url'       => '/images/community/4.png',
+                'image_alt'       => 'Blindness Control Programme',
+                'image_left'      => true,
+                'accent_type'     => 'badges',
+                'accent_title'    => 'Vision',
+                'accent_subtitle' => 'Focused Care',
+                'accent_text'     => 'Restored Sight'
+            ]
+        ];
+
+        $wpdb->insert($table_community, [
+            'hero_badge'          => 'Outreach • Education • Prevention',
+            'hero_heading'        => 'Community Activities',
+            'hero_description'    => 'Strengthening Communities Through Care and Awareness',
+            'hero_subdescription' => 'Driving Impact via Outreach, Education, and Preventive Healthcare.',
+            'intro_heading'       => 'INCLEN is committed to improving public health at the grassroots level through meaningful community engagement.',
+            'intro_description'   => 'By integrating research with outreach, we support national health priorities while ensuring essential healthcare services reach underserved populations.',
+            'initiatives'         => json_encode($default_initiatives)
+        ]);
+    }
 }
 
 // Hook to run during theme load or admin init

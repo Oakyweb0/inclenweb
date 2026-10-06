@@ -8,25 +8,10 @@ if (file_exists(__DIR__ . '/cloud_config.php')) {
     include('cloud_config.php');
 }
 
-// Global utility for admin capability check
-if (!function_exists('is_user_admin_check')) {
-    function is_user_admin_check()
-    {
-        return current_user_can('manage_options');
-    }
-}
-
-// Setup Database Tables
-if (file_exists(__DIR__ . '/setup-tables.php')) {
-    include(__DIR__ . '/setup-tables.php');
-}
-
-
 // Hide admin menus
-function custom_hide_admin_menu()
-{
-    remove_menu_page('edit.php');
-    remove_menu_page('upload.php');
+function custom_hide_admin_menu() {
+    remove_menu_page('edit.php'); 
+    remove_menu_page('upload.php');     
     remove_menu_page('edit.php?post_type=page');
     remove_menu_page('edit-comments.php');
     remove_menu_page('themes.php');
@@ -45,38 +30,32 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 use Aws\S3\S3Client;
 
 // Add Parent Menus for Managers
-function custom_register_grouped_menus()
-{
-    add_menu_page('Home Page Sections', 'Home Page Sections', 'manage_options', 'group-home', '', 'dashicons-admin-home', 24);
+function custom_register_grouped_menus() {
     add_menu_page('About', 'About', 'manage_options', 'group-resources', '', 'dashicons-database', 29);
     add_menu_page('Insight', 'Insight', 'manage_options', 'group-news', '', 'dashicons-megaphone', 25);
     add_menu_page('Careers', 'Careers', 'manage_options', 'group-careers', '', 'dashicons-businessperson', 27);
     add_menu_page('Resources', 'Resources', 'manage_options', 'group-team', '', 'dashicons-groups', 28);
     add_menu_page('Projects & Tools', 'Projects & Tools', 'manage_options', 'group-research', '', 'dashicons-admin-tools', 30);
-    add_menu_page('Partners', 'Partners', 'manage_options', 'group-partners', '', 'dashicons-networking', 26);
 }
 add_action('admin_menu', 'custom_register_grouped_menus');
 
 // Make Parent Menus Unclickable
-function custom_make_menus_unclickable()
-{
+function custom_make_menus_unclickable() {
     ?>
     <style>
-        #toplevel_page_group-home>a,
-        #toplevel_page_group-news>a,
-        #toplevel_page_group-events>a,
-        #toplevel_page_group-careers>a,
-        #toplevel_page_group-team>a,
-        #toplevel_page_group-resources>a,
-        #toplevel_page_group-research>a,
-        #toplevel_page_group-partners>a {
+        #toplevel_page_group-news > a,
+        #toplevel_page_group-events > a,
+        #toplevel_page_group-careers > a,
+        #toplevel_page_group-team > a,
+        #toplevel_page_group-resources > a,
+        #toplevel_page_group-research > a {
             pointer-events: none !important;
             cursor: default !important;
         }
     </style>
     <script>
-        jQuery(document).ready(function ($) {
-            $('#toplevel_page_group-home > a, #toplevel_page_group-news > a, #toplevel_page_group-events > a, #toplevel_page_group-careers > a, #toplevel_page_group-team > a, #toplevel_page_group-resources > a, #toplevel_page_group-research > a, #toplevel_page_group-partners > a').on('click', function (e) {
+        jQuery(document).ready(function($) {
+            $('#toplevel_page_group-news > a, #toplevel_page_group-events > a, #toplevel_page_group-careers > a, #toplevel_page_group-team > a, #toplevel_page_group-resources > a, #toplevel_page_group-research > a').on('click', function(e) {
                 e.preventDefault();
             });
         });
@@ -86,23 +65,30 @@ function custom_make_menus_unclickable()
 add_action('admin_footer', 'custom_make_menus_unclickable');
 
 // Remove duplicate parent link from the submenus
-function custom_remove_duplicate_submenus()
-{
-    remove_submenu_page('group-home', 'group-home');
+function custom_remove_duplicate_submenus() {
     remove_submenu_page('group-news', 'group-news');
     remove_submenu_page('group-events', 'group-events');
     remove_submenu_page('group-careers', 'group-careers');
     remove_submenu_page('group-team', 'group-team');
     remove_submenu_page('group-resources', 'group-resources');
     remove_submenu_page('group-research', 'group-research');
-    remove_submenu_page('group-partners', 'group-partners');
 }
 add_action('admin_menu', 'custom_remove_duplicate_submenus', 999);
 
+// Include Setup Tables automatically
+if (file_exists(__DIR__ . '/setup-tables.php')) {
+    include_once(__DIR__ . '/setup-tables.php');
+}
+
 // Include Manager Files
 $managers = [
+    'home-manager.php',
+    'about-manager.php',
+    'impact-manager.php',
+    'capacity-building-manager.php',
+    'engagement-advocacy-manager.php',
+    'community-activities-manager.php',
     'news-manager.php',
-    'blog-manager.php',
     'announcement.php',
     'events.php',
     'headings.php',
@@ -114,111 +100,74 @@ $managers = [
     'document-library.php',
     'research-projects.php',
     'inclen-tools.php',
-    'completed-projects.php',
-    'priority-settings.php',
-    'download-requests.php',
-    'partners-manager.php',
-    'annual-reports.php',
-    'newsletters-manager.php',
-    'device-products.php',
-    'fcra-registration.php',
     'training-materials.php',
-    'data-repository.php',
-    'home-manager.php',
-    'about-manager.php',
-    'navigation-manager.php',
+    'annual-reports.php',
+    'blog-manager.php',
+    'completed-projects.php',
     'contact-manager.php',
-    'impact-manager.php'
+    'data-repository.php',
+    'device-products.php',
+    'download-leads.php',
+    'download-requests.php',
+    'fcra-registration.php',
+    'navigation-manager.php',
+    'newsletters-manager.php',
+    'partners-manager.php',
+    'priority-settings.php'
 ];
 
 foreach ($managers as $manager) {
-    $manager_path = __DIR__ . '/' . $manager;
-    if (file_exists($manager_path)) {
-        include($manager_path);
+    if (file_exists(__DIR__ . '/' . $manager)) {
+        include_once(__DIR__ . '/' . $manager);
     }
 }
 
-// Redirect failed logins to custom login page
-function custom_login_failed()
-{
-    wp_redirect(site_url('wp-login.php?login=failed'));
+/**
+ * Theme Functions - Custom Login with CAPTCHA
+ */
+function custom_redirect_login_page() {
+    $login_page = home_url('/login/');
+    $page_viewed = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+
+    if ($page_viewed === 'wp-login.php' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        if (isset($_REQUEST['action']) && in_array($_REQUEST['action'], ['logout', 'lostpassword', 'rp', 'resetpass'])) {
+            return;
+        }
+        wp_redirect($login_page);
+        exit;
+    }
+}
+add_action('init', 'custom_redirect_login_page', 1);
+
+function custom_redirect_logged_in_user() {
+    if (is_user_logged_in() && is_page('login')) {
+        wp_redirect(admin_url());
+        exit;
+    }
+}
+add_action('template_redirect', 'custom_redirect_logged_in_user');
+
+function custom_logout_redirect() {
+    wp_redirect(home_url('/login/'));
     exit;
 }
-add_action('wp_login_failed', 'custom_login_failed');
+add_action('wp_logout', 'custom_logout_redirect');
 
-// Redirect empty login to custom login page
-function custom_authenticate($user, $username, $password)
-{
-    if (isset($_POST['log']) && (empty($username) || empty($password))) {
-        wp_redirect(site_url('wp-login.php?login=failed'));
+function custom_verify_user_pass($user, $username, $password) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        return $user;
+    }
+    if (empty($username) || empty($password)) {
+        wp_redirect(home_url('/login/?login=failed'));
         exit;
     }
     return $user;
 }
-add_filter('authenticate', 'custom_authenticate', 1, 3);
+add_filter('authenticate', 'custom_verify_user_pass', 20, 3);
 
-function custom_use_login_template()
-{
-    global $pagenow;
-    if ($pagenow === 'wp-login.php' && $_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_REQUEST['action'])) {
-        $template = __DIR__ . '/page-login.php';
-        if (file_exists($template)) {
-            include $template;
-            exit;
-        }
-    }
+function custom_login_failed() {
+    wp_redirect(home_url('/login/?login=failed'));
+    exit;
 }
-add_action('login_init', 'custom_use_login_template');
-
-// Allow CORS for local frontend requests (e.g. from localhost:3000 to localhost:8080)
-add_action('init', function() {
-    if (isset($_SERVER['HTTP_ORIGIN'])) {
-        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    } else {
-        header("Access-Control-Allow-Origin: *");
-    }
-    header("Access-Control-Allow-Credentials: true");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires, X-WP-Nonce");
-
-    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
-            header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-        }
-        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
-            header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
-        }
-        status_header(200);
-        exit;
-    }
-});
-
-add_filter('rest_allowed_cors_headers', function($headers) {
-    if (!is_array($headers)) {
-        $headers = [];
-    }
-    $custom_headers = [
-        'Origin',
-        'X-Requested-With',
-        'Content-Type',
-        'Accept',
-        'Authorization',
-        'Cache-Control',
-        'Pragma',
-        'Expires',
-        'X-WP-Nonce'
-    ];
-    return array_unique(array_merge($headers, $custom_headers));
-});
-
-add_filter('rest_pre_serve_request', function($value) {
-    if (isset($_SERVER['HTTP_ORIGIN'])) {
-        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    } else {
-        header("Access-Control-Allow-Origin: *");
-    }
-    header("Access-Control-Allow-Credentials: true");
-    header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires, X-WP-Nonce");
-    return $value;
-});
+add_action('wp_login_failed', 'custom_login_failed', 10);
+?>
