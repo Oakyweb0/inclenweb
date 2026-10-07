@@ -971,6 +971,128 @@ function custom_setup_database_tables() {
             'initiatives'         => json_encode($default_initiatives)
         ]);
     }
+
+    // 34. Key Research Findings Table
+    $table_findings = $wpdb->prefix . 'key_research_findings';
+    $sql_findings = "CREATE TABLE $table_findings (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_badge varchar(255) DEFAULT 'Research • Evidence • Impact',
+        hero_heading varchar(255) DEFAULT 'Key Research Findings',
+        hero_description longtext DEFAULT '',
+        hero_subdescription longtext DEFAULT '',
+        intro_heading longtext DEFAULT '',
+        intro_highlight varchar(255) DEFAULT '',
+        intro_subtext longtext DEFAULT '',
+        findings longtext DEFAULT '[]',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_findings);
+
+    $findings_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_findings");
+    if (!$findings_count || $findings_count == 0) {
+        $default_findings = [
+            [
+                'id'                   => 'neuro',
+                'category_tag'         => 'Child Health Research',
+                'title'                => 'High Burden of',
+                'title_highlight'      => 'Neurodevelopmental Disorders',
+                'description'          => 'Approximately 12% of children under 12 years of age are affected by neurodevelopmental disorders, highlighting the critical need for early screening and intervention strategies.',
+                'accent_color'         => 'accent',
+                'layout_position'      => 'chart_right',
+                'stat_type'            => 'single_stat',
+                'stat_value'           => '12%',
+                'stat_label'           => 'Incidence Rate',
+                'stat_secondary_value' => '',
+                'stat_secondary_label' => '',
+                'stat_note'            => 'Underlining the need for scaled screening infrastructure.',
+                'tags'                 => '',
+                'chart_type'           => 'pie',
+                'chart_labels'         => 'Impacted, Others',
+                'chart_data'           => '12, 88',
+                'chart_data_secondary' => '',
+                'chart_dataset_label1' => 'Incidence %',
+                'chart_dataset_label2' => ''
+            ],
+            [
+                'id'                   => 'injection',
+                'category_tag'         => 'Infection Control',
+                'title'                => 'Unsafe',
+                'title_highlight'      => 'Injection Practices',
+                'description'          => 'Nearly 63% of injections were found to be unsafe, significantly contributing to the transmission of blood-borne infections such as Hepatitis B and HIV.',
+                'accent_color'         => 'brand',
+                'layout_position'      => 'chart_left',
+                'stat_type'            => 'dual_stat',
+                'stat_value'           => '63%',
+                'stat_label'           => 'Unsafe Rate',
+                'stat_secondary_value' => 'Critical',
+                'stat_secondary_label' => 'Public Health Alert',
+                'stat_note'            => '',
+                'tags'                 => '',
+                'chart_type'           => 'line',
+                'chart_labels'         => 'Public, Private, Outreach, Overall',
+                'chart_data'           => '45, 78, 52, 63',
+                'chart_data_secondary' => '',
+                'chart_dataset_label1' => 'Unsafe Practices %',
+                'chart_dataset_label2' => ''
+            ],
+            [
+                'id'                   => 'zoonotic',
+                'category_tag'         => 'Emerging Infections',
+                'title'                => 'Zoonotic',
+                'title_highlight'      => 'Causes of Fever',
+                'description'          => 'Around 20% of acute undifferentiated fever cases are attributed to infections such as leptospirosis and scrub typhus, which can lead to serious complications like encephalopathy.',
+                'accent_color'         => 'accent',
+                'layout_position'      => 'chart_right',
+                'stat_type'            => 'tag_list',
+                'stat_value'           => '20%',
+                'stat_label'           => 'Acute Fever Cases',
+                'stat_secondary_value' => '',
+                'stat_secondary_label' => '',
+                'stat_note'            => '',
+                'tags'                 => 'Leptospirosis, Scrub Typhus',
+                'chart_type'           => 'bar',
+                'chart_labels'         => 'Leptospirosis, Scrub Typhus, Other Zoonotic, Non-Zoonotic',
+                'chart_data'           => '8, 7, 5, 80',
+                'chart_data_secondary' => '',
+                'chart_dataset_label1' => 'Prevalence %',
+                'chart_dataset_label2' => ''
+            ],
+            [
+                'id'                   => 'polio',
+                'category_tag'         => 'Immunization Strategy',
+                'title'                => 'Gaps in',
+                'title_highlight'      => 'Polio Coverage',
+                'description'          => 'Approximately 24% of children were missed during Pulse Polio campaigns, revealing critical gaps that informed targeted immunization interventions.',
+                'accent_color'         => 'brand',
+                'layout_position'      => 'chart_left',
+                'stat_type'            => 'banner_stat',
+                'stat_value'           => '24%',
+                'stat_label'           => 'Children Missed during Pulse Polio Campaigns',
+                'stat_secondary_value' => '',
+                'stat_secondary_label' => '',
+                'stat_note'            => '',
+                'tags'                 => '',
+                'chart_type'           => 'stacked_bar',
+                'chart_labels'         => 'North, Central, South, East, West',
+                'chart_data'           => '72, 78, 85, 68, 77',
+                'chart_data_secondary' => '28, 22, 15, 32, 23',
+                'chart_dataset_label1' => 'Reached',
+                'chart_dataset_label2' => 'Missed'
+            ]
+        ];
+
+        $wpdb->insert($table_findings, [
+            'hero_badge'          => 'Research • Evidence • Impact',
+            'hero_heading'        => 'Key Research Findings',
+            'hero_description'    => 'Evidence that Drives Change',
+            'hero_subdescription' => 'Data-Led Insights for Better Health Outcomes.',
+            'intro_heading'       => 'Our research translates complex public health challenges into actionable, evidence-based solutions.',
+            'intro_highlight'     => 'public health challenges',
+            'intro_subtext'       => 'We bridge the gap between scientific investigation and implementation to ensure national health priorities are met with data-driven precision.',
+            'findings'            => json_encode($default_findings)
+        ]);
+    }
 }
 
 // Hook to run during theme load or admin init
