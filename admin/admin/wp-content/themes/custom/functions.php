@@ -187,6 +187,22 @@ foreach ($managers as $manager) {
 /**
  * Theme Functions - Custom Login with CAPTCHA
  */
+function custom_serve_login_page() {
+    $path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+    if (preg_match('#(^|/)login$#', $path)) {
+        if (is_user_logged_in()) {
+            wp_redirect(admin_url());
+            exit;
+        }
+        $template = get_template_directory() . '/page-login.php';
+        if (file_exists($template)) {
+            include $template;
+            exit;
+        }
+    }
+}
+add_action('init', 'custom_serve_login_page', 2);
+
 function custom_redirect_login_page() {
     $login_page = home_url('/login/');
     $page_viewed = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
@@ -200,14 +216,6 @@ function custom_redirect_login_page() {
     }
 }
 add_action('init', 'custom_redirect_login_page', 1);
-
-function custom_redirect_logged_in_user() {
-    if (is_user_logged_in() && is_page('login')) {
-        wp_redirect(admin_url());
-        exit;
-    }
-}
-add_action('template_redirect', 'custom_redirect_logged_in_user');
 
 function custom_logout_redirect() {
     wp_redirect(home_url('/login/'));
