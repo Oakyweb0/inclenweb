@@ -1093,8 +1093,192 @@ function custom_setup_database_tables() {
             'findings'            => json_encode($default_findings)
         ]);
     }
+
+    // Policy Influence Table
+    $table_policy = $wpdb->prefix . 'policy_influence';
+    $sql_policy = "CREATE TABLE $table_policy (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        hero_badge varchar(255) DEFAULT 'EVIDENCE TO POLICY',
+        hero_title_prefix varchar(255) DEFAULT 'Policy',
+        hero_title_highlight varchar(255) DEFAULT 'Influence',
+        hero_description text DEFAULT '',
+        stats text DEFAULT '[]',
+        approach_tag varchar(255) DEFAULT 'How we make an impact',
+        approach_heading varchar(255) DEFAULT 'Our Approach',
+        approach_description text DEFAULT '',
+        pillars text DEFAULT '[]',
+        thematic_tag varchar(255) DEFAULT 'Research Streams',
+        thematic_heading varchar(255) DEFAULT 'Thematic Focus',
+        thematic_description text DEFAULT '',
+        thematic_cards text DEFAULT '[]',
+        timeline_tag varchar(255) DEFAULT 'Chronology of Impact',
+        timeline_heading varchar(255) DEFAULT 'Track Record',
+        timeline_description text DEFAULT '',
+        timeline_items text DEFAULT '[]',
+        partners_tag varchar(255) DEFAULT 'Global Translation Network',
+        partners_heading varchar(255) DEFAULT 'Partners & Collaborators',
+        partners_description text DEFAULT '',
+        collaborators text DEFAULT '[]',
+        alliances_tag varchar(255) DEFAULT 'Regional Alliances',
+        alliances_text varchar(255) DEFAULT 'IndiaCLEN · ChinaCLEN · LatinCLEN · INCLEN Africa',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_policy);
+
+    // Seed default Policy Influence data if empty
+    $count_policy = $wpdb->get_var("SELECT COUNT(*) FROM $table_policy");
+    if ($count_policy == 0) {
+        $default_stats = [
+            ['id' => 's1', 'value' => '89', 'label' => 'Academic Institutions'],
+            ['id' => 's2', 'value' => '34', 'label' => 'Countries'],
+            ['id' => 's3', 'value' => '218+', 'label' => 'Partners in India'],
+            ['id' => 's4', 'value' => '200K+', 'label' => 'Population under surveillance']
+        ];
+
+        $default_pillars = [
+            [
+                'id' => 'p1',
+                'title' => 'Evidence Generation',
+                'description' => 'Multi-site, collaborative research producing nationally representative data on high-priority health issues.',
+                'icon' => 'evidence'
+            ],
+            [
+                'id' => 'p2',
+                'title' => 'Capacity Building',
+                'description' => 'Training future leaders in clinical epidemiology and health research who carry evidence into policy roles.',
+                'icon' => 'capacity'
+            ],
+            [
+                'id' => 'p3',
+                'title' => 'Government Engagement',
+                'description' => 'Direct partnerships with MoHFW, ICMR, and state governments to align research with national health priorities.',
+                'icon' => 'government'
+            ],
+            [
+                'id' => 'p4',
+                'title' => 'Surveillance & Monitoring',
+                'description' => 'SOMAARTH-DDESS provides continuous demographic and health data from over 200,000 people to track policy outcomes.',
+                'icon' => 'surveillance'
+            ]
+        ];
+
+        $default_thematic_cards = [
+            [
+                'id' => 't1',
+                'title' => 'Child Health',
+                'description' => 'Neurodevelopmental disabilities, low birth weight, pneumonia treatment, and vaccine-preventable disease.',
+                'color' => 'purple'
+            ],
+            [
+                'id' => 't2',
+                'title' => 'Maternal & Reproductive Health',
+                'description' => 'Evidence for improving maternal care quality, neonatal outcomes, and reproductive health access.',
+                'color' => 'rose'
+            ],
+            [
+                'id' => 't3',
+                'title' => 'Nutrition & NCDs',
+                'description' => 'Social determinants of undernutrition, childhood obesity, and metabolic syndrome across LMICs.',
+                'color' => 'emerald'
+            ],
+            [
+                'id' => 't4',
+                'title' => 'Mental Health',
+                'description' => 'Digital and primary-care-based screening and management for depression, anxiety, and alcohol use.',
+                'color' => 'sky'
+            ],
+            [
+                'id' => 't5',
+                'title' => 'Injuries & Violence',
+                'description' => 'Multi-country data on childhood injuries to support prevention policies and health system responses.',
+                'color' => 'orange'
+            ]
+        ];
+
+        $default_timeline_items = [
+            [
+                'id' => 'tl1',
+                'year' => '2019',
+                'tag' => 'Neonatal Health',
+                'title' => 'Management of Possible Serious Bacterial Infection (PSBI)',
+                'description' => 'Implementation research in Palwal, Haryana on managing newborn sepsis where hospital referral is not feasible — directly informing frontline health worker protocols.'
+            ],
+            [
+                'id' => 'tl2',
+                'year' => '2018',
+                'tag' => 'Vaccines',
+                'title' => 'Rollout of Rotavirus Vaccine & Active AEFI Surveillance',
+                'description' => 'Multi-centre surveillance of adverse events following immunisation (MAASS-India) and post-introduction evaluation of rotavirus vaccine to support national immunisation policy.'
+            ],
+            [
+                'id' => 'tl3',
+                'year' => '2016',
+                'tag' => 'Child Health',
+                'title' => 'Task Force on Childhood Obesity',
+                'description' => 'Nationally coordinated evidence synthesis used to develop India\'s policy framework for prevention and management of childhood and adolescent obesity.'
+            ],
+            [
+                'id' => 'tl4',
+                'year' => '2014',
+                'tag' => 'Neurodevelopment',
+                'title' => 'Neurodevelopmental Disabilities study (NDD-India)',
+                'description' => 'Landmark multi-site study establishing prevalence of neurodevelopmental disabilities among Indian children — a critical evidence base for national disability policy.'
+            ],
+            [
+                'id' => 'tl5',
+                'year' => '2009',
+                'tag' => 'Immunisation',
+                'title' => 'Evaluation of Integrated Management of Neonatal & Childhood Illness (IMNCI)',
+                'description' => 'Comprehensive programme evaluation informing India\'s IMNCI scale-up strategy and influencing WHO guidelines for LMIC settings.'
+            ],
+            [
+                'id' => 'tl6',
+                'year' => '2005',
+                'tag' => 'Universal Immunisation',
+                'title' => 'Evaluation of Universal Immunization Program (UIP)',
+                'description' => 'Multi-site evaluation of India\'s UIP, alongside repeated pulse polio programme evaluations from 1998 onwards, directly shaping national immunisation strategy.'
+            ]
+        ];
+
+        $default_collaborators = [
+            'Ministry of Health & Family Welfare',
+            'Indian Council of Medical Research (ICMR)',
+            'Government of Haryana',
+            'World Health Organization (WHO)',
+            'Bill & Melinda Gates Foundation',
+            'UNICEF'
+        ];
+
+        $wpdb->insert($table_policy, [
+            'hero_badge'            => 'EVIDENCE TO POLICY',
+            'hero_title_prefix'     => 'Policy',
+            'hero_title_highlight'  => 'Influence',
+            'hero_description'      => 'INCLEN bridges the gap between rigorous evidence and real-world policy, working alongside governments, international agencies, and health ministries to shape decisions that improve health outcomes for underserved populations.',
+            'stats'                 => json_encode($default_stats),
+            'approach_tag'          => 'How we make an impact',
+            'approach_heading'      => 'Our Approach',
+            'approach_description'  => 'INCLEN\'s policy influence rests on four pillars — generating credible multi-site evidence, building a network of trained researchers, engaging directly with decision-makers, and sustaining long-term surveillance to track impact.',
+            'pillars'               => json_encode($default_pillars),
+            'thematic_tag'          => 'Research Streams',
+            'thematic_heading'      => 'Thematic Focus',
+            'thematic_description'  => 'INCLEN\'s five thematic groups generate evidence that directly informs national programmes and international guidelines.',
+            'thematic_cards'        => json_encode($default_thematic_cards),
+            'timeline_tag'          => 'Chronology of Impact',
+            'timeline_heading'      => 'Track Record',
+            'timeline_description'  => 'Selected research studies that have directly informed national programmes and government decision-making.',
+            'timeline_items'        => json_encode($default_timeline_items),
+            'partners_tag'          => 'Global Translation Network',
+            'partners_heading'      => 'Partners & Collaborators',
+            'partners_description'  => 'INCLEN maintains active strategic relationships with government bodies and international agencies to ensure research findings reach those who make policy.',
+            'collaborators'         => json_encode($default_collaborators),
+            'alliances_tag'         => 'Regional Alliances',
+            'alliances_text'        => 'IndiaCLEN · ChinaCLEN · LatinCLEN · INCLEN Africa'
+        ]);
+    }
 }
 
 // Hook to run during theme load or admin init
 add_action('after_switch_theme', 'custom_setup_database_tables');
 add_action('admin_init', 'custom_setup_database_tables');
+

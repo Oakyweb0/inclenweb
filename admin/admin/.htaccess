@@ -2,10 +2,10 @@
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-RewriteBase /admin/admin/
+RewriteBase /Ratan_Sir/inclentrust/admin/admin/
 RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /admin/admin/index.php [L]
+RewriteRule . /Ratan_Sir/inclentrust/admin/admin/index.php [L]
 </IfModule>
 # END WordPress

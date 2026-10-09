@@ -1958,3 +1958,4 @@ Stack trace:
 [09-Oct-2026 04:56:22 UTC]   Automatic theme updates starting...
 [09-Oct-2026 04:56:22 UTC]   Automatic theme updates complete.
 [09-Oct-2026 04:56:22 UTC] Automatic updates complete.
+[09-Oct-2026 06:57:22 UTC] PHP Warning:  mysqli_real_connect(): (HY000/1045): Access denied for user 'inclen_user'@'localhost' (using password: YES) in D:\xampp\htdocs\Ratan_Sir\inclentrust\admin\admin\wp-includes\class-wpdb.php on line 1988
