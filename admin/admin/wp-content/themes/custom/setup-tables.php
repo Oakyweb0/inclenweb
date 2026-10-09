@@ -294,6 +294,23 @@ function custom_setup_database_tables() {
     ) $charset_collate;";
     dbDelta($sql_home_collaborators);
 
+    // Seed Home Collaborators if empty
+    $count_collab = $wpdb->get_var("SELECT COUNT(*) FROM $table_home_collaborators");
+    if (!$count_collab || $count_collab == 0) {
+        $wpdb->insert($table_home_collaborators, [
+            'heading'    => 'Strategic Collaborators',
+            'subheading' => 'Empowering global healthcare through multi-disciplinary research and high-impact partnerships.',
+            'logos'      => wp_json_encode([
+                '/images/collabortor_logo/who.webp',
+                '/images/collabortor_logo/icmr_logo_new.webp',
+                '/images/collabortor_logo/phfi.webp',
+                '/images/collabortor_logo/bill-melinda-gates-foundation-logo.webp',
+                '/images/collabortor_logo/World_Bank-Logo.wine.webp',
+                '/images/collabortor_logo/UNICEF-Logo.wine.webp'
+            ])
+        ]);
+    }
+
     // 20. PDF Download Leads Table
     $table_download_leads = $wpdb->prefix . 'download_leads';
     $sql_download_leads = "CREATE TABLE $table_download_leads (

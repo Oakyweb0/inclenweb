@@ -112,6 +112,7 @@ function custom_organize_submenus() {
         'about-who-we-are',
         'about-mission',
         'home-presence',
+        'home-collaborators',
         'fcra-registration',
         'governance-team-manager',
         'about-our-journey',

@@ -11,6 +11,16 @@ add_action('admin_menu', function () {
         'home_presence_page'
     );
 
+    // Strategic Collaborators under About
+    add_submenu_page(
+        'group-about',
+        'Strategic Collaborators',
+        'Strategic Collaborators',
+        'manage_options',
+        'home-collaborators',
+        'home_collaborators_page'
+    );
+
     // Area of Work under Our Work
     add_submenu_page(
         'group-our-work',
@@ -43,7 +53,7 @@ add_action('rest_api_init', function () {
     ]);
 
     register_rest_route('home-hero/v1', '/delete/(?P<id>\d+)', [
-        'methods'  => 'DELETE',
+        'methods'  => ['DELETE', 'POST'],
         'callback' => 'delete_home_hero',
         'permission_callback' => '__return_true'
     ]);
@@ -68,38 +78,61 @@ function upload_home_collaborator_logo_to_r2() {
 }
 
 function upload_any_home_image_to_r2($prefix) {
-    global $accountId, $accessKey, $secretKey, $bucket;
+    global $accountId, $accessKey, $secretKey, $bucket, $public_url;
 
-    if (!isset($_FILES['file'])) {
+    if (!isset($_FILES['file']) || empty($_FILES['file']['tmp_name'])) {
         return ['error' => 'No file uploaded'];
     }
 
     $fileTmp  = $_FILES['file']['tmp_name'];
-    $fileName = time() . '-' . $prefix . '-' . basename($_FILES['file']['name']);
-    $publicUrlBase = "https://pub-0a4b820e73c14605a159d60ec5f71130.r2.dev/admin";
+    $cleanOriginal = preg_replace('/[^a-zA-Z0-9._-]/', '', basename($_FILES['file']['name']));
+    $fileName = time() . '-' . $prefix . '-' . $cleanOriginal;
+    $publicUrlBase = !empty($public_url) ? rtrim($public_url, '/') : "https://pub-0a4b820e73c14605a159d60ec5f71130.r2.dev/admin";
     
+    // Try Cloudflare R2 Upload
     try {
-        $client = new Aws\S3\S3Client([
-            'version' => 'latest',
-            'region'  => 'auto',
-            'endpoint' => "https://$accountId.r2.cloudflarestorage.com",
-            'credentials' => [
-                'key'    => $accessKey,
-                'secret' => $secretKey,
-            ],
-        ]);
+        if (class_exists('\\Aws\\S3\\S3Client') && !empty($accountId) && !empty($accessKey) && !empty($secretKey)) {
+            $client = new Aws\S3\S3Client([
+                'version'  => 'latest',
+                'region'   => 'auto',
+                'endpoint' => "https://$accountId.r2.cloudflarestorage.com",
+                'credentials' => [
+                    'key'    => $accessKey,
+                    'secret' => $secretKey,
+                ],
+            ]);
 
-        $client->putObject([
-            'Bucket' => $bucket,
-            'Key' => 'admin/' . $fileName,
-            'SourceFile' => $fileTmp,
-            'ContentType' => $_FILES['file']['type']
-        ]);
+            $mimeType = $_FILES['file']['type'] ?? 'image/jpeg';
+            if (empty($mimeType) && function_exists('mime_content_type') && file_exists($fileTmp)) {
+                $mimeType = mime_content_type($fileTmp);
+            }
+            if (empty($mimeType)) $mimeType = 'image/jpeg';
 
-        return ['url' => $publicUrlBase . '/' . $fileName];
+            $client->putObject([
+                'Bucket'      => !empty($bucket) ? $bucket : 'inclen',
+                'Key'         => 'admin/' . $fileName,
+                'SourceFile'  => $fileTmp,
+                'ContentType' => $mimeType
+            ]);
+
+            return ['url' => $publicUrlBase . '/' . $fileName];
+        }
     } catch (Exception $e) {
-        return ['error' => $e->getMessage()];
+        error_log('R2 Upload error in home manager: ' . $e->getMessage());
     }
+
+    // Local upload fallback
+    $upload_dir = wp_upload_dir();
+    $target_dir = $upload_dir['basedir'] . '/home/';
+    if (!file_exists($target_dir)) {
+        wp_mkdir_p($target_dir);
+    }
+    $target_file = $target_dir . $fileName;
+    if (move_uploaded_file($fileTmp, $target_file)) {
+        return ['url' => $upload_dir['baseurl'] . '/home/' . $fileName];
+    }
+
+    return ['error' => 'Upload failed'];
 }
 
 // REST API setup for Home About
@@ -320,7 +353,7 @@ add_action('rest_api_init', function () {
     ]);
 
     register_rest_route('home-collaborators/v1', '/delete/(?P<id>\d+)', [
-        'methods'  => 'DELETE',
+        'methods'  => ['DELETE', 'POST'],
         'callback' => 'delete_home_collaborators',
         'permission_callback' => '__return_true'
     ]);
@@ -335,7 +368,24 @@ add_action('rest_api_init', function () {
 function get_all_home_collaborators() {
     global $wpdb;
     $table = $wpdb->prefix . 'home_collaborators';
-    return $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC");
+    $results = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC");
+    if (empty($results)) {
+        $default_logos = [
+            '/images/collabortor_logo/who.webp',
+            '/images/collabortor_logo/icmr_logo_new.webp',
+            '/images/collabortor_logo/phfi.webp',
+            '/images/collabortor_logo/bill-melinda-gates-foundation-logo.webp',
+            '/images/collabortor_logo/World_Bank-Logo.wine.webp',
+            '/images/collabortor_logo/UNICEF-Logo.wine.webp'
+        ];
+        $wpdb->insert($table, [
+            'heading'    => 'Strategic Collaborators',
+            'subheading' => 'Empowering global healthcare through multi-disciplinary research and high-impact partnerships.',
+            'logos'      => wp_json_encode($default_logos)
+        ]);
+        $results = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC");
+    }
+    return $results;
 }
 
 function add_home_collaborators($request) {
@@ -1445,57 +1495,171 @@ function home_presence_page() { ?>
 
 function home_collaborators_page() { ?>
     <div class="wrap">
-        <h1>Strategic Collaborators Manager</h1>
+        <h1 style="font-weight: 700; color: #1e293b; margin-bottom: 20px;">
+            <span class="dashicons dashicons-networking" style="font-size:32px; width:32px; height:32px; margin-right:8px; vertical-align:middle; color:#f7610c;"></span>
+            Strategic Collaborators & Logo Slider Manager
+        </h1>
+        <p style="color: #64748b; font-size: 14px; margin-top:-10px; margin-bottom: 20px;">
+            Manage the partner logos marquee slider and section heading displayed on the Homepage.
+        </p>
+
         <style>
-            .error-msg { color: red; font-size: 13px; margin-top: 5px; display: block; font-weight: 500; }
-            .input-error { border-color: red !important; }
-            .logo-item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #fafafa; border-radius: 4px; display: flex; gap: 15px; align-items: center; }
-            .logo-item input[type="file"] { flex: 1; }
+            .collab-card {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 24px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                margin-bottom: 30px;
+            }
+            .error-msg { color: #dc2626; font-size: 13px; margin-top: 4px; display: block; font-weight: 500; }
+            .input-error { border-color: #dc2626 !important; }
+            .logo-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 16px;
+                margin-top: 10px;
+                margin-bottom: 15px;
+            }
+            .logo-card-item {
+                background: #f8fafc;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                position: relative;
+                transition: all 0.2s ease;
+            }
+            .logo-card-item:hover {
+                border-color: #94a3b8;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08);
+            }
+            .logo-preview-box {
+                width: 100%;
+                height: 70px;
+                background: #ffffff;
+                border: 1px dashed #cbd5e1;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                padding: 8px;
+            }
+            .logo-preview-box img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
+            .logo-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .logo-card-header strong {
+                font-size: 13px;
+                color: #334155;
+            }
+            .logo-actions {
+                display: flex;
+                gap: 4px;
+            }
+            .logo-upload-btn {
+                position: relative;
+                overflow: hidden;
+                display: inline-block;
+            }
+            .upload-spinner {
+                display: inline-block;
+                color: #f7610c;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            .table-logo-gallery {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                align-items: center;
+            }
+            .table-logo-thumb {
+                width: 48px;
+                height: 36px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 4px;
+                padding: 3px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .table-logo-thumb img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+            }
         </style>
 
-        <div style="background:#fff;padding:20px;margin-top:20px;border:1px solid #ccc;border-radius:6px;">
-            <h2>Add / Edit Collaborators Section</h2>
+        <div class="collab-card">
+            <h2 id="hc_form_title" style="margin-top:0; font-size:18px; font-weight:600; color:#0f172a; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+                Add / Edit Collaborators Section
+            </h2>
 
-            <table class="form-table">
+            <table class="form-table" style="margin-top:0;">
                 <tr>
-                    <th>Heading</th>
+                    <th style="width:160px;"><label for="hc_heading"><strong>Section Heading</strong></label></th>
                     <td>
-                        <input type="text" id="hc_heading" class="regular-text" required placeholder="e.g. Strategic Collaborators">
+                        <input type="text" id="hc_heading" class="regular-text" style="width:100%; max-width:550px;" required placeholder="e.g. Strategic Collaborators" value="Strategic Collaborators">
                         <span id="hc_heading_error" class="error-msg"></span>
                     </td>
                 </tr>
                 <tr>
-                    <th>Subheading</th>
+                    <th><label for="hc_subheading"><strong>Subheading</strong></label></th>
                     <td>
-                        <textarea id="hc_subheading" class="large-text" rows="2" placeholder="e.g. Working together to achieve global health goals..."></textarea>
+                        <textarea id="hc_subheading" class="large-text" rows="2" style="width:100%; max-width:550px;" placeholder="e.g. Empowering global healthcare through multi-disciplinary research and high-impact partnerships.">Empowering global healthcare through multi-disciplinary research and high-impact partnerships.</textarea>
                     </td>
                 </tr>
                 <tr>
-                    <th>Logos</th>
+                    <th><label><strong>Partner Logos</strong></label></th>
                     <td>
-                        <div id="hc_logos_container"></div>
-                        <button type="button" class="button" onclick="addCollaboratorLogo()">+ Add Logo</button>
+                        <div style="margin-bottom:10px;">
+                            <span style="color:#64748b; font-size:13px;">Upload logo files (.png, .webp, .svg, .jpg) or enter file URLs. Use arrow buttons to adjust slider order.</span>
+                        </div>
+                        <div id="hc_logos_container" class="logo-grid"></div>
+                        <button type="button" class="button" style="background:#f1f5f9; color:#0f172a; border-color:#cbd5e1; font-weight:600;" onclick="addCollaboratorLogo()">
+                            + Add Another Logo
+                        </button>
                     </td>
                 </tr>
             </table>
 
-            <p>
-                <button class="button button-primary" onclick="saveHomeCollaborators()">Save Collaborators Section</button>
-            </p>
+            <div style="margin-top:24px; padding-top:16px; border-top:1px solid #f1f5f9; display:flex; gap:10px; align-items:center;">
+                <button class="button button-primary button-large" id="hc_save_btn" onclick="saveHomeCollaborators()" style="background:#f7610c; border-color:#f7610c; font-weight:600; padding:4px 20px;">
+                    Save Collaborators Section
+                </button>
+                <button type="button" class="button button-large" id="hc_cancel_btn" style="display:none;" onclick="cancelEditCollaborators()">
+                    Cancel Edit
+                </button>
+                <span id="hc_status_msg" style="margin-left:10px; font-weight:500; font-size:13px;"></span>
+            </div>
         </div>
 
-        <div style="margin-top:30px;">
-            <h2>All Collaborators Sections</h2>
-            <table class="wp-list-table widefat fixed striped">
+        <div style="margin-top:35px;">
+            <h2 style="font-size:18px; font-weight:600; color:#0f172a;">All Collaborators Sections</h2>
+            <table class="wp-list-table widefat fixed striped" style="background:#fff; border-radius:6px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <thead>
                     <tr>
-                        <th>Heading</th>
+                        <th style="width: 220px;">Heading</th>
                         <th>Subheading</th>
-                        <th>Logos Count</th>
-                        <th>Action</th>
+                        <th style="width: 260px;">Logos Preview</th>
+                        <th style="width: 100px;">Total Logos</th>
+                        <th style="width: 140px; text-align:right;">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="homeCollaboratorsList"></tbody>
+                <tbody id="homeCollaboratorsList">
+                    <tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Loading collaborator sections...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -1508,44 +1672,104 @@ function home_collaborators_page() { ?>
         const container = document.getElementById('hc_logos_container');
         const count = container.children.length + 1;
         const div = document.createElement('div');
-        div.className = 'logo-item';
+        div.className = 'logo-card-item';
         
-        let imgHtml = url ? `<img src="${url}" style="max-height:40px; border-radius:2px;">` : `<img style="max-height:40px; display:none; border-radius:2px;">`;
-        
+        let hasImg = url && url.trim() !== '';
+        let displayUrl = url ? url.trim() : '';
+
         div.innerHTML = `
-            <label>Logo ${count}:</label>
-            <input type="file" accept="image/*" onchange="uploadCollaboratorLogo(this)">
-            <input type="hidden" class="hc-logo-url" value="${url}">
-            ${imgHtml}
-            <button type="button" class="button" style="color:#b32d2e;" onclick="this.parentElement.remove(); updateHcCounts();">X</button>
+            <div class="logo-card-header">
+                <strong class="logo-num-label">Logo #${count}</strong>
+                <div class="logo-actions">
+                    <button type="button" class="button button-small" title="Move Up" onclick="moveLogoItem(this, -1)">↑</button>
+                    <button type="button" class="button button-small" title="Move Down" onclick="moveLogoItem(this, 1)">↓</button>
+                    <button type="button" class="button button-small" style="color:#b32d2e; border-color:#fca5a5;" title="Remove" onclick="this.closest('.logo-card-item').remove(); updateHcCounts();">✕</button>
+                </div>
+            </div>
+
+            <div class="logo-preview-box">
+                <img src="${displayUrl}" style="display:${hasImg ? 'block' : 'none'};" alt="Logo Preview" onerror="this.style.display='none';">
+                <span class="no-img-text" style="display:${hasImg ? 'none' : 'block'}; color:#94a3b8; font-size:12px;">No Logo Selected</span>
+            </div>
+
+            <div>
+                <label style="font-size:11px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Upload File:</label>
+                <input type="file" accept="image/*" style="width:100%; font-size:12px;" onchange="uploadCollaboratorLogo(this)">
+                <span class="upload-status" style="font-size:11px; color:#f7610c; display:none; margin-top:2px;">Uploading...</span>
+            </div>
+
+            <div>
+                <label style="font-size:11px; font-weight:600; color:#475569; display:block; margin-bottom:4px;">Or Logo URL / Relative Path:</label>
+                <input type="text" class="regular-text hc-logo-url" style="width:100%; font-size:12px; padding:4px 8px;" placeholder="/images/collabortor_logo/who.webp" value="${displayUrl.replace(/"/g, '&quot;')}" oninput="updateLogoPreview(this)">
+            </div>
         `;
         container.appendChild(div);
+        updateHcCounts();
+    }
+
+    function updateLogoPreview(inputEl) {
+        const card = inputEl.closest('.logo-card-item');
+        const img = card.querySelector('.logo-preview-box img');
+        const noText = card.querySelector('.no-img-text');
+        const val = inputEl.value.trim();
+        if (val) {
+            img.src = val;
+            img.style.display = 'block';
+            if (noText) noText.style.display = 'none';
+        } else {
+            img.style.display = 'none';
+            if (noText) noText.style.display = 'block';
+        }
+    }
+
+    function moveLogoItem(btn, direction) {
+        const item = btn.closest('.logo-card-item');
+        const container = document.getElementById('hc_logos_container');
+        if (direction === -1 && item.previousElementSibling) {
+            container.insertBefore(item, item.previousElementSibling);
+        } else if (direction === 1 && item.nextElementSibling) {
+            container.insertBefore(item.nextElementSibling, item);
+        }
+        updateHcCounts();
     }
 
     function updateHcCounts() {
         const container = document.getElementById('hc_logos_container');
         Array.from(container.children).forEach((child, index) => {
-            const label = child.querySelector('label');
-            if(label) label.innerText = `Logo ${index + 1}:`;
+            const label = child.querySelector('.logo-num-label');
+            if(label) label.innerText = `Logo #${index + 1}`;
         });
     }
 
     function uploadCollaboratorLogo(inputEl) {
         let file = inputEl.files[0];
         if(!file) return;
+        
+        let card = inputEl.closest('.logo-card-item');
+        let statusEl = card.querySelector('.upload-status');
+        if(statusEl) {
+            statusEl.innerText = "Uploading logo...";
+            statusEl.style.display = "block";
+        }
+
         let formData = new FormData();
         formData.append("file", file);
+        
         fetch(HC_API_BASE + "/upload-image", { method: "POST", body: formData })
         .then(res => res.json())
         .then(data => {
+            if(statusEl) statusEl.style.display = "none";
             if (data.url) {
-                inputEl.parentElement.querySelector('.hc-logo-url').value = data.url;
-                let imgEl = inputEl.parentElement.querySelector('img');
-                imgEl.src = data.url;
-                imgEl.style.display = 'block';
+                const urlInput = card.querySelector('.hc-logo-url');
+                urlInput.value = data.url;
+                updateLogoPreview(urlInput);
             } else {
-                alert("Upload Failed");
+                alert("Upload failed: " + (data.error || "Unknown error"));
             }
+        })
+        .catch(err => {
+            if(statusEl) statusEl.style.display = "none";
+            alert("Upload error: " + err.message);
         });
     }
 
@@ -1554,22 +1778,47 @@ function home_collaborators_page() { ?>
         .then(res => res.json())
         .then(data => {
             let html = '';
-            data.forEach(item => {
-                let logos = [];
-                try { logos = JSON.parse(item.logos) || []; } catch(e){}
-                
-                html += `
-                <tr>
-                    <td><strong>${item.heading}</strong></td>
-                    <td>${item.subheading}</td>
-                    <td>${logos.length} logos</td>
-                    <td>
-                        <button class="button button-small edit-btn" onclick='editHomeCollaborators(${JSON.stringify(item).replace(/'/g, "\\'")})'>Edit</button>
-                        <button class="button button-small delete-btn" style="color:#b32d2e;" onclick='deleteHomeCollaborators(${item.id})'>Delete</button>
-                    </td>
-                </tr>`;
-            });
+            if (!Array.isArray(data) || data.length === 0) {
+                html = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">No collaborator sections found. Add one above.</td></tr>';
+            } else {
+                data.forEach(item => {
+                    let logos = [];
+                    try { logos = JSON.parse(item.logos) || []; } catch(e){}
+                    if (typeof logos === 'string') {
+                        try { logos = JSON.parse(logos) || []; } catch(e){}
+                    }
+                    if (!Array.isArray(logos)) logos = [];
+
+                    let previewThumbs = '';
+                    logos.slice(0, 6).forEach(src => {
+                        previewThumbs += `<div class="table-logo-thumb"><img src="${src}" alt="logo"></div>`;
+                    });
+                    if (logos.length > 6) {
+                        previewThumbs += `<span style="font-size:12px; color:#64748b; font-weight:600;">+${logos.length - 6} more</span>`;
+                    }
+
+                    html += `
+                    <tr>
+                        <td><strong style="color:#0f172a; font-size:14px;">${item.heading || 'Strategic Collaborators'}</strong></td>
+                        <td style="color:#475569; font-size:13px;">${item.subheading || ''}</td>
+                        <td><div class="table-logo-gallery">${previewThumbs || '<span style="color:#94a3b8; font-size:12px;">No logos</span>'}</div></td>
+                        <td><span style="background:#e2e8f0; color:#334155; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600;">${logos.length} logos</span></td>
+                        <td style="text-align:right;">
+                            <button class="button button-small" style="background:#f8fafc; color:#0f172a; font-weight:600;" onclick='editHomeCollaborators(${JSON.stringify(item).replace(/'/g, "\\'")})'>Edit</button>
+                            <button class="button button-small" style="color:#b32d2e; border-color:#fecaca;" onclick='deleteHomeCollaborators(${item.id})'>Delete</button>
+                        </td>
+                    </tr>`;
+                });
+
+                // If not currently editing a specific ID, automatically load the active record
+                if (!hcEditingId && data.length > 0) {
+                    editHomeCollaborators(data[0]);
+                }
+            }
             document.getElementById("homeCollaboratorsList").innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById("homeCollaboratorsList").innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#ef4444;">Failed to load data. Please refresh.</td></tr>';
         });
     }
 
@@ -1592,10 +1841,15 @@ function home_collaborators_page() { ?>
 
         const data = {
             heading: headingVal,
-            subheading: document.getElementById("hc_subheading").value,
+            subheading: document.getElementById("hc_subheading").value.trim(),
             logos: logosArr
         };
         
+        const saveBtn = document.getElementById("hc_save_btn");
+        const statusMsg = document.getElementById("hc_status_msg");
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Saving...";
+
         let url = HC_API_BASE + "/add";
         if (hcEditingId) url = HC_API_BASE + "/update/" + hcEditingId;
 
@@ -1604,42 +1858,73 @@ function home_collaborators_page() { ?>
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data)
         })
+        .then(res => res.json())
         .then(() => { 
-            alert("Saved successfully!"); 
-            hcEditingId = null; 
-            document.getElementById("hc_heading").value = '';
-            document.getElementById("hc_subheading").value = '';
-            document.getElementById("hc_logos_container").innerHTML = '';
-            loadHomeCollaborators(); 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Save Collaborators Section";
+            statusMsg.style.color = "#16a34a";
+            statusMsg.innerText = "✓ Saved successfully!";
+            setTimeout(() => { statusMsg.innerText = ''; }, 3000);
+
+            loadHomeCollaborators();
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Save Collaborators Section";
+            statusMsg.style.color = "#dc2626";
+            statusMsg.innerText = "Error: " + err.message;
         });
     }
 
     function editHomeCollaborators(item) {
         hcEditingId = item.id;
+        document.getElementById("hc_form_title").innerText = "Edit Active Collaborators Section (ID #" + item.id + ")";
+        document.getElementById("hc_cancel_btn").style.display = "none";
         document.getElementById("hc_heading").value = item.heading || '';
         document.getElementById("hc_subheading").value = item.subheading || '';
         
         document.getElementById("hc_logos_container").innerHTML = '';
         let logos = [];
         try { logos = JSON.parse(item.logos) || []; } catch(e){}
+        if (typeof logos === 'string') {
+            try { logos = JSON.parse(logos) || []; } catch(e){}
+        }
+        if (!Array.isArray(logos)) logos = [];
+
         logos.forEach(url => addCollaboratorLogo(url));
         if(logos.length === 0) addCollaboratorLogo();
+    }
+
+    function cancelEditCollaborators() {
+        hcEditingId = null;
+        document.getElementById("hc_form_title").innerText = "Add / Edit Collaborators Section";
+        document.getElementById("hc_cancel_btn").style.display = "none";
+        document.getElementById("hc_heading").value = 'Strategic Collaborators';
+        document.getElementById("hc_subheading").value = 'Empowering global healthcare through multi-disciplinary research and high-impact partnerships.';
+        document.getElementById("hc_logos_container").innerHTML = '';
         
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const defaultLogos = [
+            '/images/collabortor_logo/who.webp',
+            '/images/collabortor_logo/icmr_logo_new.webp',
+            '/images/collabortor_logo/phfi.webp',
+            '/images/collabortor_logo/bill-melinda-gates-foundation-logo.webp',
+            '/images/collabortor_logo/World_Bank-Logo.wine.webp',
+            '/images/collabortor_logo/UNICEF-Logo.wine.webp'
+        ];
+        defaultLogos.forEach(logo => addCollaboratorLogo(logo));
     }
 
     function deleteHomeCollaborators(id) {
         if (!confirm("Are you sure you want to delete this Collaborators Section?")) return;
-        fetch(HC_API_BASE + "/delete/" + id, { method: "DELETE" })
-        .then(() => loadHomeCollaborators());
+        fetch(HC_API_BASE + "/delete/" + id, { method: "POST" })
+        .then(() => {
+            hcEditingId = null;
+            loadHomeCollaborators();
+        });
     }
 
     document.addEventListener("DOMContentLoaded", () => {
         loadHomeCollaborators();
-        if(document.getElementById("hc_logos_container").children.length === 0) {
-            addCollaboratorLogo();
-        }
     });
     </script>
 <?php }
