@@ -8,6 +8,28 @@ if (file_exists(__DIR__ . '/cloud_config.php')) {
     include('cloud_config.php');
 }
 
+// Enable CORS for frontend requests (including localhost:3000 Next.js)
+add_action('init', function () {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+    header("Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires");
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header("Access-Control-Max-Age: 86400");
+        status_header(200);
+        exit();
+    }
+});
+
+add_action('rest_api_init', function () {
+    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
+    add_filter('rest_pre_serve_request', function ($value) {
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
+        header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma, Expires');
+        return $value;
+    });
+}, 15);
+
 // Hide admin menus
 function custom_hide_admin_menu() {
     remove_menu_page('edit.php'); 

@@ -152,17 +152,21 @@ function add_opening($request) {
 function update_opening($request) {
     global $wpdb;
     $table = $wpdb->prefix . 'openings';
-    $params = json_decode($request->get_body(), true);
+    $params = $request->get_json_params();
+    if (empty($params)) {
+        $params = json_decode($request->get_body(), true);
+    }
+    $id = intval($request['id']);
 
     $wpdb->update($table, [
-        'title'           => sanitize_text_field($params['title']),
-        'slug'            => sanitize_title($params['title']),
-        'content'         => wp_kses_post($params['content']),
-        'location'        => sanitize_text_field($params['location']),
-        'employment_type' => sanitize_text_field($params['employment_type']),
+        'title'           => sanitize_text_field($params['title'] ?? ''),
+        'slug'            => sanitize_title($params['title'] ?? ''),
+        'content'         => wp_kses_post($params['content'] ?? ''),
+        'location'        => sanitize_text_field($params['location'] ?? ''),
+        'employment_type' => sanitize_text_field($params['employment_type'] ?? ''),
         'image'           => esc_url_raw($params['image'] ?? ''),
         'pdf'             => esc_url_raw($params['pdf'] ?? ''),
-    ], ['id' => $request['id']]);
+    ], ['id' => $id]);
 
     return ['status' => 'updated'];
 }
@@ -170,7 +174,8 @@ function update_opening($request) {
 function delete_opening($request) {
     global $wpdb;
     $table = $wpdb->prefix . 'openings';
-    $wpdb->delete($table, ['id' => $request['id']]);
+    $id = intval($request['id']);
+    $wpdb->delete($table, ['id' => $id]);
     return ['status' => 'deleted'];
 }
 
@@ -179,7 +184,7 @@ function opening_manager_page() { ?>
     <h1>Current Openings Manager</h1>
     
     <div style="background:#fff;padding:20px;margin-top:20px;border:1px solid #ccc;border-radius:6px;">
-        <h2>Add / Edit Opening</h2>
+        <h2 id="form_title">Add New Opening</h2>
         <table class="form-table">
             <tr>
                 <th>Title <span style="color:red;">*</span></th>
@@ -221,13 +226,13 @@ function opening_manager_page() { ?>
                 <td>
                     <input type="file" id="pdf_file" accept="application/pdf">
                     <input type="hidden" id="pdf">
-                    <span id="pdf_name" style="display:none; color:#0073aa;"></span>
+                    <span id="pdf_name" style="display:none; color:#0073aa; font-weight:600; margin-left:10px;"></span>
                 </td>
             </tr>
         </table>
-        <p>
-            <button class="button button-primary" onclick="addOpening()">Save Opening</button>
-            <button class="button" onclick="resetForm()" style="margin-left:10px;">Clear Form</button>
+        <p style="margin-top:15px;">
+            <button id="submit_btn" class="button button-primary" onclick="saveOpening()">Save Opening</button>
+            <button id="cancel_btn" class="button" onclick="resetForm()" style="margin-left:10px;">Clear Form</button>
         </p>
     </div>
 
@@ -236,13 +241,13 @@ function opening_manager_page() { ?>
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Location</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Image</th>
-                    <th>PDF</th>
-                    <th>Action</th>
+                    <th style="width: 20%;">Title</th>
+                    <th style="width: 15%;">Location</th>
+                    <th style="width: 15%;">Type</th>
+                    <th style="width: 12%;">Date</th>
+                    <th style="width: 10%;">Image</th>
+                    <th style="width: 12%;">PDF</th>
+                    <th style="width: 16%;">Action</th>
                 </tr>
             </thead>
             <tbody id="openingList"></tbody>
@@ -253,51 +258,92 @@ function opening_manager_page() { ?>
 <script>
 const API_BASE = "<?php echo site_url('/index.php?rest_route=/currentopening/v1'); ?>";
 let editingId = null;
+let openingsData = [];
+
+function getEditorContent() {
+    if (typeof tinymce !== 'undefined' && tinymce.get("content_editor")) {
+        return tinymce.get("content_editor").getContent();
+    }
+    const textarea = document.getElementById("content_editor");
+    return textarea ? textarea.value : "";
+}
+
+function setEditorContent(val) {
+    if (typeof tinymce !== 'undefined' && tinymce.get("content_editor")) {
+        tinymce.get("content_editor").setContent(val || "");
+    }
+    const textarea = document.getElementById("content_editor");
+    if (textarea) {
+        textarea.value = val || "";
+    }
+}
 
 function loadOpenings() {
     fetch(API_BASE + "/all-openings")
         .then(res => res.json())
         .then(data => {
+            openingsData = Array.isArray(data) ? data : [];
             let html = '';
-            data.forEach(item => {
-                html += `
-                <tr>
-                    <td><strong>${item.title}</strong></td>
-                    <td>${item.location || '-'}</td>
-                    <td>${item.employment_type || '-'}</td>
-                    <td>${item.created_at ? item.created_at.substring(0,10) : '-'}</td>
-                    <td>${item.image ? `<img src="${item.image}" width="60" style="border-radius:3px;border:1px solid #ddd;">` : '-'}</td>
-                    <td>${item.pdf ? `<a href="${item.pdf}" target="_blank">View PDF</a>` : '-'}</td>
-                    <td>
-                        <button onclick='editOpening(${JSON.stringify(item)})' class="button">Edit</button>
-                        <button onclick='deleteOpening(${item.id})' class="button button-link-delete">Delete</button>
-                    </td>
-                </tr>`;
-            });
+            if (openingsData.length === 0) {
+                html = '<tr><td colspan="7" style="text-align:center;padding:20px;">No openings found.</td></tr>';
+            } else {
+                openingsData.forEach((item, index) => {
+                    html += `
+                    <tr>
+                        <td><strong>${escapeHtml(item.title || '')}</strong></td>
+                        <td>${escapeHtml(item.location || '-')}</td>
+                        <td>${escapeHtml(item.employment_type || '-')}</td>
+                        <td>${item.created_at ? item.created_at.substring(0,10) : '-'}</td>
+                        <td>${item.image ? `<img src="${item.image}" width="60" style="border-radius:3px;border:1px solid #ddd;">` : '-'}</td>
+                        <td>${item.pdf ? `<a href="${item.pdf}" target="_blank" style="font-weight:600;">View PDF</a>` : '-'}</td>
+                        <td>
+                            <button onclick="editOpeningByIndex(${index})" class="button button-small">Edit</button>
+                            <button onclick="deleteOpening(${item.id})" class="button button-small button-link-delete" style="margin-left:5px;">Delete</button>
+                        </td>
+                    </tr>`;
+                });
+            }
             document.getElementById("openingList").innerHTML = html;
         })
         .catch(err => console.error("Error loading openings:", err));
 }
 
-function addOpening() {
-    if (!document.getElementById("title").value.trim()) {
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function saveOpening() {
+    const title = document.getElementById("title").value.trim();
+    if (!title) {
         alert("Title is required");
         return;
     }
 
-    let content = tinymce.get("content_editor").getContent();
+    const content = getEditorContent();
 
     const data = {
-        title: document.getElementById("title").value,
+        title: title,
         content: content,
-        location: document.getElementById("location").value,
+        location: document.getElementById("location").value.trim(),
         employment_type: document.getElementById("employment_type").value,
         image: document.getElementById("image").value,
         pdf: document.getElementById("pdf").value
     };
 
     let url = API_BASE + "/add-opening";
-    if (editingId) url = API_BASE + "/update-opening/" + editingId;
+    if (editingId) {
+        url = API_BASE + "/update-opening/" + editingId;
+    }
+
+    const submitBtn = document.getElementById("submit_btn");
+    submitBtn.disabled = true;
+    submitBtn.innerText = editingId ? "Updating..." : "Saving...";
 
     fetch(url, {
         method: "POST",
@@ -306,16 +352,28 @@ function addOpening() {
     })
     .then(res => res.json())
     .then(() => {
-        alert(editingId ? "Updated Successfully ✓" : "Saved Successfully ✓");
-        editingId = null;
+        alert(editingId ? "Opening Updated Successfully ✓" : "Opening Saved Successfully ✓");
         resetForm();
         loadOpenings();
     })
-    .catch(err => alert("Error: " + err));
+    .catch(err => {
+        alert("Error saving opening: " + err);
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = editingId ? "Update Opening" : "Save Opening";
+    });
 }
 
-function editOpening(item) {
+function editOpeningByIndex(index) {
+    const item = openingsData[index];
+    if (!item) return;
+
     editingId = item.id;
+    document.getElementById("form_title").innerText = "Edit Opening (ID: " + item.id + ")";
+    document.getElementById("submit_btn").innerText = "Update Opening";
+    document.getElementById("cancel_btn").innerText = "Cancel Edit";
+
     document.getElementById("title").value = item.title || "";
     document.getElementById("location").value = item.location || "";
     document.getElementById("employment_type").value = item.employment_type || "";
@@ -332,29 +390,37 @@ function editOpening(item) {
 
     // PDF name hint
     if (item.pdf) {
-        document.getElementById("pdf_name").innerText = "PDF Uploaded";
+        document.getElementById("pdf_name").innerText = "PDF Attached ✓";
         document.getElementById("pdf_name").style.display = "inline";
     } else {
         document.getElementById("pdf_name").style.display = "none";
     }
 
-    tinymce.get("content_editor").setContent(item.content || "");
-    window.scrollTo(0, 0);
+    setEditorContent(item.content || "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function deleteOpening(id) {
     if (!confirm("Are you sure you want to delete this opening?")) return;
 
     fetch(API_BASE + "/delete-opening/" + id, { method: "DELETE" })
+        .then(res => res.json())
         .then(() => {
-            alert("Deleted Successfully");
+            alert("Deleted Successfully ✓");
+            if (editingId == id) {
+                resetForm();
+            }
             loadOpenings();
         })
-        .catch(err => alert("Error: " + err));
+        .catch(err => alert("Error deleting: " + err));
 }
 
 function resetForm() {
     editingId = null;
+    document.getElementById("form_title").innerText = "Add New Opening";
+    document.getElementById("submit_btn").innerText = "Save Opening";
+    document.getElementById("cancel_btn").innerText = "Clear Form";
+
     document.getElementById("title").value = "";
     document.getElementById("location").value = "";
     document.getElementById("employment_type").value = "";
@@ -362,7 +428,9 @@ function resetForm() {
     document.getElementById("pdf").value = "";
     document.getElementById("preview_image").style.display = "none";
     document.getElementById("pdf_name").style.display = "none";
-    tinymce.get("content_editor").setContent("");
+    document.getElementById("image_file").value = "";
+    document.getElementById("pdf_file").value = "";
+    setEditorContent("");
 }
 
 // Image Upload
@@ -406,7 +474,7 @@ document.getElementById("pdf_file").addEventListener("change", function() {
     .then(data => {
         if (data.url) {
             document.getElementById("pdf").value = data.url;
-            document.getElementById("pdf_name").innerText = file.name;
+            document.getElementById("pdf_name").innerText = file.name + " (Uploaded)";
             document.getElementById("pdf_name").style.display = "inline";
         } else {
             alert("PDF Upload Failed: " + (data.error || ""));
