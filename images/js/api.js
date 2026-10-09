@@ -66,14 +66,29 @@ const ApiService = {
             throw error;
         }
     },
-    // },
 
-    // 3. Example API: POST data
-    // submitContactForm: async (formData) => {
-    //     const response = await apiClient.post('/contact/v1/submit', formData);
-    //     return response.data;
-    // }
+    // 6. Footer Settings (Logo, Description, Explore Links, Social Media)
+    getFooterSettings: async () => {
+        try {
+            const response = await apiClient.get('/footer-settings/v1/all');
+            return response.data;
+        } catch (error) {
+            console.error('API Error (getFooterSettings):', error);
+            throw error;
+        }
+    },
+
+    saveFooterSettings: async (settingsData) => {
+        try {
+            const response = await apiClient.post('/footer-settings/v1/save', settingsData);
+            return response.data;
+        } catch (error) {
+            console.error('API Error (saveFooterSettings):', error);
+            throw error;
+        }
+    }
 };
 
 // Expose globally so Alpine.js models and vanilla scripts can consume it
 window.ApiService = ApiService;
+

@@ -1367,6 +1367,61 @@ function custom_setup_database_tables() {
             ]);
         }
     }
+    // 42. Footer Settings Table
+    $table_footer = $wpdb->prefix . 'footer_settings';
+    $sql_footer = "CREATE TABLE $table_footer (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        logo_url varchar(500) DEFAULT '/inclen_new.png',
+        logo_alt varchar(255) DEFAULT 'INCLEN Trust International',
+        about_text longtext DEFAULT '',
+        twitter_url varchar(500) DEFAULT '',
+        linkedin_url varchar(500) DEFAULT '',
+        facebook_url varchar(500) DEFAULT '',
+        instagram_url varchar(500) DEFAULT '',
+        youtube_url varchar(500) DEFAULT '',
+        explore_links longtext DEFAULT '[]',
+        newsletter_title varchar(255) DEFAULT 'Newsletter',
+        newsletter_subtitle varchar(255) DEFAULT 'Subscribe to receive the latest updates.',
+        visitor_counter_url varchar(500) DEFAULT 'https://info.flagcounter.com/etB2',
+        visitor_counter_img varchar(500) DEFAULT 'https://s01.flagcounter.com/count2/etB2/bg_FFFFFF/txt_000000/border_FFFFFF/columns_2/maxflags_8/viewers_0/labels_0/pageviews_0/flags_0/percent_0/',
+        copyright_text varchar(500) DEFAULT '© 2026 INCLEN Trust International. All rights served.',
+        privacy_policy_url varchar(500) DEFAULT '/privacy',
+        terms_url varchar(500) DEFAULT '#',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_footer);
+
+    $count_footer = $wpdb->get_var("SELECT COUNT(*) FROM $table_footer");
+    if (!$count_footer || $count_footer == 0) {
+        $default_explore = [
+            ['id' => '1', 'title' => 'Our Mission', 'url' => '/about#what-we-do', 'target' => '_self', 'is_active' => true],
+            ['id' => '2', 'title' => 'Research Projects', 'url' => '/research', 'target' => '_self', 'is_active' => true],
+            ['id' => '3', 'title' => 'Partner Institutes', 'url' => '/partners', 'target' => '_self', 'is_active' => true],
+            ['id' => '4', 'title' => 'Publications', 'url' => '/publications', 'target' => '_self', 'is_active' => true],
+            ['id' => '5', 'title' => 'Careers', 'url' => '/careers', 'target' => '_self', 'is_active' => true],
+            ['id' => '6', 'title' => 'FCRA & Registration', 'url' => '/fcra', 'target' => '_self', 'is_active' => true],
+        ];
+
+        $wpdb->insert($table_footer, [
+            'logo_url'            => '/inclen_new.png',
+            'logo_alt'            => 'INCLEN Trust International',
+            'about_text'          => 'INCLEN Trust International is a global network dedicated to improving the health of populations by promoting equitable health care based on the best evidence of effectiveness.',
+            'twitter_url'         => 'https://x.com/INCLEN_TRUST',
+            'linkedin_url'        => 'https://www.linkedin.com/in/the-inclen-trust-international-663035106/',
+            'facebook_url'        => 'https://www.facebook.com/profile.php?id=100021257529599#',
+            'instagram_url'       => '',
+            'youtube_url'         => '',
+            'explore_links'       => wp_json_encode($default_explore),
+            'newsletter_title'    => 'Newsletter',
+            'newsletter_subtitle' => 'Subscribe to receive the latest updates.',
+            'visitor_counter_url' => 'https://info.flagcounter.com/etB2',
+            'visitor_counter_img' => 'https://s01.flagcounter.com/count2/etB2/bg_FFFFFF/txt_000000/border_FFFFFF/columns_2/maxflags_8/viewers_0/labels_0/pageviews_0/flags_0/percent_0/',
+            'copyright_text'      => '© 2026 INCLEN Trust International. All rights served.',
+            'privacy_policy_url'  => '/privacy',
+            'terms_url'           => '#'
+        ]);
+    }
 }
 
 // Hook to run during theme load or admin init

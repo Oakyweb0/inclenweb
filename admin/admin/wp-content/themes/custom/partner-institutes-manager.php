@@ -3,17 +3,8 @@
  * Partner Institutes Manager (Footer / Collaborating Institutes)
  */
 
-// Register Admin Submenu under Footer
-add_action('admin_menu', function () {
-    add_submenu_page(
-        'group-footer',
-        'Partner Institutes',
-        'Partner Institutes',
-        'manage_options',
-        'partner-institutes-manager',
-        'partner_institutes_manager_page'
-    );
-});
+// Submenu registration under Footer removed as requested
+
 
 // Setup Table
 function custom_setup_partner_institutes_table() {

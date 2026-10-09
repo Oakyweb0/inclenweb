@@ -180,7 +180,7 @@ function custom_organize_submenus() {
 
     // Desired order for Footer
     $footer_order = [
-        'partner-institutes-manager'
+        'footer-settings-manager'
     ];
 
     $sort_group = function($parent_slug, $order_slugs) use (&$submenu) {
@@ -257,7 +257,8 @@ $managers = [
     'newsletters-manager.php',
     'partners-manager.php',
     'partner-institutes-manager.php',
-    'priority-settings.php'
+    'priority-settings.php',
+    'footer-settings-manager.php'
 ];
 
 foreach ($managers as $manager) {
