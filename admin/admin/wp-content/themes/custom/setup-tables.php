@@ -1322,6 +1322,50 @@ function custom_setup_database_tables() {
             'alliances_text'        => 'IndiaCLEN · ChinaCLEN · LatinCLEN · INCLEN Africa'
         ]);
     }
+
+    // 40. Academic Association Table
+    $table_academic_assoc = $wpdb->prefix . 'academic_association';
+    $sql_academic_assoc = "CREATE TABLE $table_academic_assoc (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        program_type varchar(100) NOT NULL DEFAULT 'phd',
+        title varchar(255) NOT NULL,
+        tag varchar(255) DEFAULT '',
+        duration varchar(100) DEFAULT '',
+        description longtext DEFAULT '',
+        eligibility longtext DEFAULT '',
+        pdf_url varchar(500) DEFAULT '',
+        image_url varchar(500) DEFAULT '',
+        sort_order int(11) DEFAULT 0,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_academic_assoc);
+
+    if (function_exists('custom_seed_academic_association_data')) {
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table_academic_assoc");
+        if ($count == 0) {
+            custom_seed_academic_association_data();
+        }
+    }
+
+    // 41. Site Navigation (Navbar Control) Table
+    $table_nav = $wpdb->prefix . 'site_navigation';
+    $sql_nav = "CREATE TABLE $table_nav (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        menu_structure longtext NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_nav);
+
+    if (function_exists('get_default_menu_structure')) {
+        $count_nav = $wpdb->get_var("SELECT COUNT(*) FROM $table_nav");
+        if ($count_nav == 0) {
+            $wpdb->insert($table_nav, [
+                'menu_structure' => wp_json_encode(get_default_menu_structure())
+            ]);
+        }
+    }
 }
 
 // Hook to run during theme load or admin init

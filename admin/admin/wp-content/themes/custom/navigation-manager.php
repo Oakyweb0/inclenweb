@@ -3,17 +3,42 @@
  * Website Navigation Menu Visibility Manager
  */
 
-// Register Navigation settings page under Footer
+// Register Navigation settings page as a dedicated top-level menu
 add_action('admin_menu', function () {
-    add_submenu_page(
-        'group-footer',
-        'Option to add new menu',
-        'Option to add new menu',
+    add_menu_page(
+        'Navbar / Navigation Manager',
+        'Navbar Control',
         'manage_options',
         'navigation-settings',
-        'navigation_settings_page'
+        'navigation_settings_page',
+        'dashicons-menu-alt3',
+        20
     );
 });
+
+// Setup Table on Init
+function custom_setup_site_navigation_table() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'site_navigation';
+    $charset_collate = $wpdb->get_charset_collate();
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+    $sql = "CREATE TABLE $table (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        menu_structure longtext NOT NULL,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql);
+
+    $count = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+    if ($count == 0 && function_exists('get_default_menu_structure')) {
+        $wpdb->insert($table, [
+            'menu_structure' => wp_json_encode(get_default_menu_structure())
+        ]);
+    }
+}
+add_action('init', 'custom_setup_site_navigation_table');
 
 // REST API initialization
 add_action('rest_api_init', function () {

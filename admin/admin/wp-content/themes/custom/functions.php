@@ -178,8 +178,7 @@ function custom_organize_submenus() {
 
     // Desired order for Footer
     $footer_order = [
-        'partner-institutes-manager',
-        'navigation-settings'
+        'partner-institutes-manager'
     ];
 
     $sort_group = function($parent_slug, $order_slugs) use (&$submenu) {
