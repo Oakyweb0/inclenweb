@@ -63,6 +63,32 @@ add_action('rest_api_init', function () {
         'permission_callback' => '__return_true',
     ]);
 
+    // Transforming Lives
+    register_rest_route('transforming-lives/v1', '/all', [
+        'methods'             => 'GET',
+        'callback'            => function() {
+            $data = get_option('transforming_lives_data', [
+                'title' => 'Transforming Lives Across India',
+                'subtitle' => 'See how our research translates into real-world health solutions.',
+                'cta_label' => 'Explore Impact',
+                'cta_link' => '/our-impact',
+                'image' => 'https://images.pexels.com/photos/6120214/pexels-photo-6120214.jpeg'
+            ]);
+            return rest_ensure_response($data);
+        },
+        'permission_callback' => '__return_true',
+    ]);
+
+    register_rest_route('transforming-lives/v1', '/save', [
+        'methods'             => 'POST',
+        'callback'            => function($request) {
+            $body = $request->get_json_params();
+            update_option('transforming_lives_data', $body);
+            return rest_ensure_response(['success' => true, 'message' => 'Saved successfully']);
+        },
+        'permission_callback' => '__return_true',
+    ]);
+
     register_rest_route('impact-sub/v1', '/all', [
         'methods'             => 'GET',
         'callback'            => function() {
@@ -1224,12 +1250,13 @@ function transforming_lives_page() {
         'title' => 'Transforming Lives Across India',
         'subtitle' => 'See how our research translates into real-world health solutions.',
         'cta_label' => 'Explore Impact',
-        'cta_link' => '/our-impact'
+        'cta_link' => '/our-impact',
+        'image' => 'https://images.pexels.com/photos/6120214/pexels-photo-6120214.jpeg'
     ]);
     ?>
     <div class="wrap" style="max-width: 1000px;">
         <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 22px 28px; border-radius: 12px; margin-bottom: 25px;">
-            <h1 style="color: #fff; margin: 0 0 6px 0; font-size: 24px;">✨ Transforming Lives Banner Manager</h1>
+            <h1 style="color: #fff; margin: 0 0 6px 0; font-size: 24px;">Transforming Lives Banner Manager</h1>
             <p style="margin: 0; color: #94a3b8; font-size: 14px;">Manage promotional card and spotlight stories for Our Impact dropdown & pages</p>
         </div>
         <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px;">
@@ -1252,6 +1279,10 @@ function transforming_lives_page() {
                         <input type="text" id="trans_link" value="<?php echo esc_attr($data['cta_link'] ?? ''); ?>" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;">
                     </div>
                 </div>
+                <div>
+                    <label style="display: block; font-weight: 700; color: #334155; margin-bottom: 6px;">Image URL</label>
+                    <input type="text" id="trans_image" value="<?php echo esc_attr($data['image'] ?? 'https://images.pexels.com/photos/6120214/pexels-photo-6120214.jpeg'); ?>" placeholder="https://images.pexels.com/..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
                 <button type="button" id="save-trans-btn" style="background: #ea580c; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; align-self: flex-start;">
                     💾 Save Transforming Lives Banner
                 </button>
@@ -1268,15 +1299,25 @@ function transforming_lives_page() {
                 title: $('#trans_title').val(),
                 subtitle: $('#trans_sub').val(),
                 cta_label: $('#trans_btn').val(),
-                cta_link: $('#trans_link').val()
+                cta_link: $('#trans_link').val(),
+                image: $('#trans_image').val()
             };
-            fetch('<?php echo esc_url_raw(rest_url('impact-sub/v1/save-transforming')); ?>', {
+            fetch('<?php echo esc_url_raw(rest_url('transforming-lives/v1/save')); ?>', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': '<?php echo wp_create_nonce('wp_rest'); ?>'
+                },
                 body: JSON.stringify(payload)
+            }).then(function(res) {
+                return res.json();
             }).then(function() {
                 btn.text('💾 Save Transforming Lives Banner').prop('disabled', false);
                 $('#trans-msg').css({ display: 'block', background: '#dcfce7', color: '#15803d' }).text('✓ Updated successfully!').fadeIn();
+                setTimeout(function() { $('#trans-msg').fadeOut(); }, 3500);
+            }).catch(function(err) {
+                btn.text('💾 Save Transforming Lives Banner').prop('disabled', false);
+                $('#trans-msg').css({ display: 'block', background: '#fee2e2', color: '#b91c1c' }).text('Failed to save. Please try again.').fadeIn();
                 setTimeout(function() { $('#trans-msg').fadeOut(); }, 3500);
             });
         });
