@@ -5,7 +5,7 @@
 
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-research',
+        'group-resources',
         'Completed Projects',
         'Completed Projects',
         'manage_options',
@@ -36,7 +36,7 @@ add_action('rest_api_init', function () {
     ]);
 
     register_rest_route($namespace, '/delete/(?P<id>\d+)', [
-        'methods' => 'DELETE',
+        'methods' => ['POST', 'DELETE'],
         'callback' => 'delete_completed_project',
         'permission_callback' => function() { return current_user_can('manage_options'); }
     ]);
@@ -90,7 +90,7 @@ function upload_pdf_to_r2_completed() {
 function get_all_completed_projects() {
     global $wpdb;
     $table = $wpdb->prefix . 'completed_projects';
-    $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC") ?: [];
+    $results = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC") ?: [];
     return ['value' => $results];
 }
 
@@ -123,7 +123,7 @@ function update_completed_project($request) {
     try {
         global $wpdb;
         $table = $wpdb->prefix . 'completed_projects';
-        $id = $request['id'];
+        $id = intval($request['id']);
         $params = $request->get_json_params();
 
         if (!$params) return new WP_Error('invalid_json', 'Invalid JSON body', ['status' => 400]);
@@ -134,6 +134,7 @@ function update_completed_project($request) {
             'principal_investigator' => sanitize_text_field($params['principal_investigator'] ?? ''),
             'co_investigator' => sanitize_text_field($params['co_investigator'] ?? ''),
             'funder' => sanitize_text_field($params['funder'] ?? ''),
+            'study_sites' => sanitize_text_field($params['study_sites'] ?? ''),
             'pdf_url' => esc_url_raw($params['pdf_url'] ?? ''),
             'summary' => sanitize_textarea_field($params['summary'] ?? '')
         ], ['id' => $id]);
@@ -147,7 +148,7 @@ function update_completed_project($request) {
 function delete_completed_project($request) {
     global $wpdb;
     $table = $wpdb->prefix . 'completed_projects';
-    $wpdb->delete($table, ['id' => $request['id']]);
+    $wpdb->delete($table, ['id' => intval($request['id'])]);
     return ['status' => 'success'];
 }
 
@@ -226,7 +227,7 @@ function completed_projects_page() {
     <div class="wrap">
         <h1>Completed Projects Manager</h1>
 
-        <div class="inclen-card">
+        <div class="inclen-card" id="project-form-container">
             <h2 id="form-heading" style="font-size: 18px; margin-bottom: 30px;">Add New Completed Project</h2>
             <input type="hidden" id="project-id" value="">
 
@@ -237,7 +238,7 @@ function completed_projects_page() {
 
             <div class="form-row">
                 <div class="form-label">Year of Completion</div>
-                <input type="text" id="year" class="form-input" placeholder="Enter year">
+                <input type="text" id="year" class="form-input" placeholder="Enter year (e.g. July 2019 or 2023)">
             </div>
 
             <div class="form-row">
@@ -261,7 +262,7 @@ function completed_projects_page() {
             </div>
 
             <div class="form-row">
-                <div class="form-label">Report (PDF) <span>*</span></div>
+                <div class="form-label">Report (PDF)</div>
                 <div>
                     <button type="button" class="btn-upload" id="upload-pdf-btn">
                         <span class="dashicons dashicons-upload"></span> Upload PDF
@@ -269,8 +270,8 @@ function completed_projects_page() {
                     <input type="hidden" id="pdf_url">
                     <div id="pdf-preview" style="display:none;" class="pdf-preview-item">
                         <span class="dashicons dashicons-pdf" style="color: #ef4444;"></span>
-                        <span id="pdf-name"></span>
-                        <span class="remove-pdf dashicons dashicons-no-alt" onclick="jQuery('#pdf_url').val(''); jQuery('#pdf-preview').hide();"></span>
+                        <a id="pdf-link" href="#" target="_blank" style="color:#2563eb; text-decoration:none;"><span id="pdf-name"></span></a>
+                        <span class="remove-pdf dashicons dashicons-no-alt" id="remove-pdf-btn" title="Remove"></span>
                     </div>
                 </div>
             </div>
@@ -280,7 +281,7 @@ function completed_projects_page() {
                 <textarea id="summary" class="form-input" style="max-width: 600px; height: 100px;" placeholder="Enter project summary"></textarea>
             </div>
 
-            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; pt: 20px;">
+            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; padding-top: 20px;">
                 <button type="button" class="btn-save" id="save-btn">Save Project</button>
                 <button type="button" class="btn-clear" id="clear-btn">Clear Form</button>
             </div>
@@ -307,24 +308,31 @@ function completed_projects_page() {
     jQuery(document).ready(function($) {
         const API_BASE = '<?php echo rest_url('inclen-completed/v1'); ?>';
         const WP_NONCE = '<?php echo wp_create_nonce('wp_rest'); ?>';
-        let editId = 0;
+        let projectsMap = {};
 
         function loadProjects() {
             $.get(API_BASE + '/all', function(res) {
                 let html = '';
-                (res.value || []).forEach((p, index) => {
+                projectsMap = {};
+                const list = res.value || [];
+                if (list.length === 0) {
+                    $('#projects-list').html('<tr><td colspan="7" style="padding:20px; text-align:center; color:#888;">No completed projects found.</td></tr>');
+                    return;
+                }
+                list.forEach((p, index) => {
+                    projectsMap[p.id] = p;
                     html += `<tr>
                         <td style="padding: 15px;">${index + 1}</td>
-                        <td style="padding: 15px;">${p.title}</td>
-                        <td style="padding: 15px;">${p.year}</td>
-                        <td style="padding: 15px;">${p.principal_investigator}</td>
-                        <td style="padding: 15px;">${p.co_investigator}</td>
+                        <td style="padding: 15px;"><strong>${$('<div>').text(p.title || '').html()}</strong></td>
+                        <td style="padding: 15px;">${$('<div>').text(p.year || '-').html()}</td>
+                        <td style="padding: 15px;">${$('<div>').text(p.principal_investigator || '-').html()}</td>
+                        <td style="padding: 15px;">${$('<div>').text(p.co_investigator || '-').html()}</td>
                         <td style="padding: 15px;">
-                            ${p.pdf_url ? `<a href="${p.pdf_url}" target="_blank" style="color: #ef4444;"><span class="dashicons dashicons-pdf"></span></a>` : '-'}
+                            ${p.pdf_url ? `<a href="${p.pdf_url}" target="_blank" style="color: #ef4444;"><span class="dashicons dashicons-pdf"></span> View PDF</a>` : '-'}
                         </td>
                         <td style="padding: 15px;">
-                            <button class="button edit-btn" data-json='${JSON.stringify(p)}'>Edit</button>
-                            <button class="button delete-btn" data-id="${p.id}" style="color: red;">Delete</button>
+                            <button class="button edit-btn" data-id="${p.id}">Edit</button>
+                            <button class="button delete-btn" data-id="${p.id}" style="color: #ef4444; border-color:#fca5a5;">Delete</button>
                         </td>
                     </tr>`;
                 });
@@ -354,11 +362,12 @@ function completed_projects_page() {
                     success: function(res) {
                         $('#pdf_url').val(res.url);
                         $('#pdf-name').text(file.name);
+                        $('#pdf-link').attr('href', res.url);
                         $('#pdf-preview').show();
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     },
-                    error: function() {
-                        alert('Upload failed');
+                    error: function(xhr) {
+                        alert('Upload failed: ' + (xhr.responseJSON?.message || 'Server error'));
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     }
                 });
@@ -366,21 +375,34 @@ function completed_projects_page() {
             fileInput.click();
         });
 
+        $('#remove-pdf-btn').click(function() {
+            $('#pdf_url').val('');
+            $('#pdf-preview').hide();
+        });
+
         $('#save-btn').click(function() {
+            const editId = $('#project-id').val();
             const data = {
-                title: $('#title').val(),
-                year: $('#year').val(),
-                principal_investigator: $('#pi').val(),
-                co_investigator: $('#co_pi').val(),
-                funder: $('#funder').val(),
-                study_sites: $('#study_sites').val(),
-                summary: $('#summary').val(),
+                title: $('#title').val().trim(),
+                year: $('#year').val().trim(),
+                principal_investigator: $('#pi').val().trim(),
+                co_investigator: $('#co_pi').val().trim(),
+                funder: $('#funder').val().trim(),
+                study_sites: $('#study_sites').val().trim(),
+                summary: $('#summary').val().trim(),
                 pdf_url: $('#pdf_url').val()
             };
 
-            if (!data.title) return alert('Title is required');
+            if (!data.title) {
+                alert('Title is required');
+                $('#title').focus();
+                return;
+            }
 
             const url = editId ? API_BASE + '/update/' + editId : API_BASE + '/add';
+            const btn = $(this);
+            btn.prop('disabled', true).text('Saving...');
+
             $.ajax({
                 url: url,
                 method: 'POST',
@@ -388,15 +410,19 @@ function completed_projects_page() {
                 contentType: 'application/json',
                 beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
                 success: function() {
-                    alert('Project saved successfully');
+                    alert(editId ? 'Project updated successfully!' : 'Project added successfully!');
                     clearForm();
                     loadProjects();
+                    btn.prop('disabled', false).text(editId ? 'Update Project' : 'Save Project');
+                },
+                error: function(xhr) {
+                    alert('Error: ' + (xhr.responseJSON?.message || xhr.responseText || 'Failed to save'));
+                    btn.prop('disabled', false).text(editId ? 'Update Project' : 'Save Project');
                 }
             });
         });
 
         function clearForm() {
-            editId = 0;
             $('#project-id').val('');
             $('#title').val('');
             $('#year').val('');
@@ -414,34 +440,50 @@ function completed_projects_page() {
         $('#clear-btn').click(clearForm);
 
         $(document).on('click', '.edit-btn', function() {
-            const p = $(this).data('json');
-            editId = p.id;
-            $('#title').val(p.title);
-            $('#year').val(p.year);
-            $('#pi').val(p.principal_investigator);
-            $('#co_pi').val(p.co_investigator);
-            $('#funder').val(p.funder);
-            $('#study_sites').val(p.study_sites);
-            $('#summary').val(p.summary);
-            $('#pdf_url').val(p.pdf_url);
+            const id = $(this).data('id');
+            const p = projectsMap[id];
+            if (!p) return;
+
+            $('#project-id').val(p.id);
+            $('#title').val(p.title || '');
+            $('#year').val(p.year || '');
+            $('#pi').val(p.principal_investigator || '');
+            $('#co_pi').val(p.co_investigator || '');
+            $('#funder').val(p.funder || '');
+            $('#study_sites').val(p.study_sites || '');
+            $('#summary').val(p.summary || '');
+            $('#pdf_url').val(p.pdf_url || '');
             
             if (p.pdf_url) {
-                $('#pdf-name').text('Current PDF');
+                const parts = p.pdf_url.split('/');
+                $('#pdf-name').text(parts[parts.length - 1] || 'Current PDF');
+                $('#pdf-link').attr('href', p.pdf_url);
                 $('#pdf-preview').show();
+            } else {
+                $('#pdf-preview').hide();
             }
 
-            $('#form-heading').text('Edit Completed Project');
+            $('#form-heading').text('Edit Completed Project (ID: ' + p.id + ')');
             $('#save-btn').text('Update Project');
-            window.scrollTo(0, 0);
+            $('html, body').animate({ scrollTop: $('#project-form-container').offset().top - 40 }, 300);
         });
 
         $(document).on('click', '.delete-btn', function() {
-            if(!confirm('Delete this project?')) return;
+            const id = $(this).data('id');
+            if(!confirm('Are you sure you want to delete this completed project?')) return;
             $.ajax({
-                url: API_BASE + '/delete/' + $(this).data('id'),
-                method: 'DELETE',
+                url: API_BASE + '/delete/' + id,
+                method: 'POST',
                 beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
-                success: loadProjects
+                success: function() {
+                    loadProjects();
+                    if ($('#project-id').val() == id) {
+                        clearForm();
+                    }
+                },
+                error: function() {
+                    alert('Failed to delete project');
+                }
             });
         });
 

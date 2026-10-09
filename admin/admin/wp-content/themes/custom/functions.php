@@ -167,6 +167,8 @@ function custom_organize_submenus() {
         'newsletters',
         'data-repository',
         'inclen-tools',
+        'completed-projects',
+        'priority-settings',
         'training-materials',
         'download-leads'
     ];

@@ -5,7 +5,7 @@
 
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-research',
+        'group-resources',
         'Research Priority Setting',
         'Research Priority Setting',
         'manage_options',
@@ -36,7 +36,7 @@ add_action('rest_api_init', function () {
     ]);
 
     register_rest_route($namespace, '/delete/(?P<id>\d+)', [
-        'methods' => 'DELETE',
+        'methods' => ['POST', 'DELETE'],
         'callback' => 'delete_priority_setting',
         'permission_callback' => function() { return current_user_can('manage_options'); }
     ]);
@@ -90,7 +90,7 @@ function upload_pdf_to_r2_priority() {
 function get_all_priority_settings() {
     global $wpdb;
     $table = $wpdb->prefix . 'priority_settings';
-    $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC") ?: [];
+    $results = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC") ?: [];
     return ['value' => $results];
 }
 
@@ -120,7 +120,7 @@ function update_priority_setting($request) {
     try {
         global $wpdb;
         $table = $wpdb->prefix . 'priority_settings';
-        $id = $request['id'];
+        $id = intval($request['id']);
         $params = $request->get_json_params();
 
         if (!$params) return new WP_Error('invalid_json', 'Invalid JSON body', ['status' => 400]);
@@ -142,7 +142,7 @@ function update_priority_setting($request) {
 function delete_priority_setting($request) {
     global $wpdb;
     $table = $wpdb->prefix . 'priority_settings';
-    $wpdb->delete($table, ['id' => $request['id']]);
+    $wpdb->delete($table, ['id' => intval($request['id'])]);
     return ['status' => 'success'];
 }
 
@@ -221,7 +221,7 @@ function priority_settings_page() {
     <div class="wrap">
         <h1>Research Priority Setting Manager</h1>
 
-        <div class="inclen-card">
+        <div class="inclen-card" id="priority-form-container">
             <h2 id="form-heading" style="font-size: 18px; margin-bottom: 30px;">Add New Priority Setting</h2>
             <input type="hidden" id="setting-id" value="">
 
@@ -232,16 +232,16 @@ function priority_settings_page() {
 
             <div class="form-row">
                 <div class="form-label">Category</div>
-                <input type="text" id="category" class="form-input" placeholder="Enter category">
+                <input type="text" id="category" class="form-input" placeholder="Enter category (e.g. Health, Nutrition)">
             </div>
 
             <div class="form-row">
                 <div class="form-label">Duration / Year</div>
-                <input type="text" id="duration" class="form-input" placeholder="Enter duration or year">
+                <input type="text" id="duration" class="form-input" placeholder="Enter duration or year (e.g. 2022-2025)">
             </div>
 
             <div class="form-row">
-                <div class="form-label">PDF Document <span>*</span></div>
+                <div class="form-label">PDF Document</div>
                 <div>
                     <button type="button" class="btn-upload" id="upload-pdf-btn">
                         <span class="dashicons dashicons-upload"></span> Upload PDF
@@ -249,8 +249,8 @@ function priority_settings_page() {
                     <input type="hidden" id="file_url">
                     <div id="pdf-preview" style="display:none;" class="pdf-preview-item">
                         <span class="dashicons dashicons-pdf" style="color: #ef4444;"></span>
-                        <span id="pdf-name"></span>
-                        <span class="remove-pdf dashicons dashicons-no-alt" onclick="jQuery('#file_url').val(''); jQuery('#pdf-preview').hide();"></span>
+                        <a id="pdf-link" href="#" target="_blank" style="color:#2563eb; text-decoration:none;"><span id="pdf-name"></span></a>
+                        <span class="remove-pdf dashicons dashicons-no-alt" id="remove-pdf-btn" title="Remove"></span>
                     </div>
                 </div>
             </div>
@@ -260,7 +260,7 @@ function priority_settings_page() {
                 <input type="text" id="file_size" class="form-input" placeholder="e.g. 2.5 MB">
             </div>
 
-            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; pt: 20px;">
+            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; padding-top: 20px;">
                 <button type="button" class="btn-save" id="save-btn">Save Priority Setting</button>
                 <button type="button" class="btn-clear" id="clear-btn">Clear Form</button>
             </div>
@@ -273,8 +273,9 @@ function priority_settings_page() {
                     <th style="padding: 15px; width: 50px;">Sr No</th>
                     <th style="padding: 15px;">Project Name</th>
                     <th style="padding: 15px;">Category</th>
-                    <th style="padding: 15px;">Duration</th>
-                    <th style="padding: 15px;">Tools</th>
+                    <th style="padding: 15px;">Duration / Year</th>
+                    <th style="padding: 15px;">File Size</th>
+                    <th style="padding: 15px;">PDF Document</th>
                     <th style="padding: 15px; width: 150px;">Actions</th>
                 </tr>
             </thead>
@@ -286,23 +287,31 @@ function priority_settings_page() {
     jQuery(document).ready(function($) {
         const API_BASE = '<?php echo rest_url('inclen-priority/v1'); ?>';
         const WP_NONCE = '<?php echo wp_create_nonce('wp_rest'); ?>';
-        let editId = 0;
+        let priorityMap = {};
 
         function loadPriority() {
             $.get(API_BASE + '/all', function(res) {
                 let html = '';
-                (res.value || []).forEach((p, index) => {
+                priorityMap = {};
+                const list = res.value || [];
+                if (list.length === 0) {
+                    $('#priority-list').html('<tr><td colspan="7" style="padding:20px; text-align:center; color:#888;">No priority settings found.</td></tr>');
+                    return;
+                }
+                list.forEach((p, index) => {
+                    priorityMap[p.id] = p;
                     html += `<tr>
                         <td style="padding: 15px;">${index + 1}</td>
-                        <td style="padding: 15px;">${p.name}</td>
-                        <td style="padding: 15px;">${p.category}</td>
-                        <td style="padding: 15px;">${p.duration}</td>
+                        <td style="padding: 15px;"><strong>${$('<div>').text(p.name || '').html()}</strong></td>
+                        <td style="padding: 15px;">${$('<div>').text(p.category || '-').html()}</td>
+                        <td style="padding: 15px;">${$('<div>').text(p.duration || '-').html()}</td>
+                        <td style="padding: 15px;">${$('<div>').text(p.file_size || '-').html()}</td>
                         <td style="padding: 15px;">
-                            ${p.file_url ? `<a href="${p.file_url}" target="_blank" style="color: #ef4444;"><span class="dashicons dashicons-pdf"></span></a>` : '-'}
+                            ${p.file_url ? `<a href="${p.file_url}" target="_blank" style="color: #ef4444;"><span class="dashicons dashicons-pdf"></span> View PDF</a>` : '-'}
                         </td>
                         <td style="padding: 15px;">
-                            <button class="button edit-btn" data-json='${JSON.stringify(p)}'>Edit</button>
-                            <button class="button delete-btn" data-id="${p.id}" style="color: red;">Delete</button>
+                            <button class="button edit-btn" data-id="${p.id}">Edit</button>
+                            <button class="button delete-btn" data-id="${p.id}" style="color: #ef4444; border-color:#fca5a5;">Delete</button>
                         </td>
                     </tr>`;
                 });
@@ -332,15 +341,18 @@ function priority_settings_page() {
                     success: function(res) {
                         $('#file_url').val(res.url);
                         $('#pdf-name').text(file.name);
+                        $('#pdf-link').attr('href', res.url);
                         $('#pdf-preview').show();
                         
                         const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-                        $('#file_size').val(size);
+                        if (!$('#file_size').val()) {
+                            $('#file_size').val(size);
+                        }
 
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     },
-                    error: function() {
-                        alert('Upload failed');
+                    error: function(xhr) {
+                        alert('Upload failed: ' + (xhr.responseJSON?.message || 'Server error'));
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     }
                 });
@@ -348,18 +360,31 @@ function priority_settings_page() {
             fileInput.click();
         });
 
+        $('#remove-pdf-btn').click(function() {
+            $('#file_url').val('');
+            $('#pdf-preview').hide();
+        });
+
         $('#save-btn').click(function() {
+            const editId = $('#setting-id').val();
             const data = {
-                name: $('#name').val(),
-                category: $('#category').val(),
-                duration: $('#duration').val(),
+                name: $('#name').val().trim(),
+                category: $('#category').val().trim(),
+                duration: $('#duration').val().trim(),
                 file_url: $('#file_url').val(),
-                file_size: $('#file_size').val()
+                file_size: $('#file_size').val().trim()
             };
 
-            if (!data.name) return alert('Project Name is required');
+            if (!data.name) {
+                alert('Project Name is required');
+                $('#name').focus();
+                return;
+            }
 
             const url = editId ? API_BASE + '/update/' + editId : API_BASE + '/add';
+            const btn = $(this);
+            btn.prop('disabled', true).text('Saving...');
+
             $.ajax({
                 url: url,
                 method: 'POST',
@@ -367,15 +392,19 @@ function priority_settings_page() {
                 contentType: 'application/json',
                 beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
                 success: function() {
-                    alert('Priority setting saved successfully');
+                    alert(editId ? 'Priority setting updated successfully!' : 'Priority setting saved successfully!');
                     clearForm();
                     loadPriority();
+                    btn.prop('disabled', false).text(editId ? 'Update Priority Setting' : 'Save Priority Setting');
+                },
+                error: function(xhr) {
+                    alert('Error: ' + (xhr.responseJSON?.message || xhr.responseText || 'Failed to save'));
+                    btn.prop('disabled', false).text(editId ? 'Update Priority Setting' : 'Save Priority Setting');
                 }
             });
         });
 
         function clearForm() {
-            editId = 0;
             $('#setting-id').val('');
             $('#name').val('');
             $('#category').val('');
@@ -390,31 +419,47 @@ function priority_settings_page() {
         $('#clear-btn').click(clearForm);
 
         $(document).on('click', '.edit-btn', function() {
-            const p = $(this).data('json');
-            editId = p.id;
-            $('#name').val(p.name);
-            $('#category').val(p.category);
-            $('#duration').val(p.duration);
-            $('#file_url').val(p.file_url);
-            $('#file_size').val(p.file_size);
+            const id = $(this).data('id');
+            const p = priorityMap[id];
+            if (!p) return;
+
+            $('#setting-id').val(p.id);
+            $('#name').val(p.name || '');
+            $('#category').val(p.category || '');
+            $('#duration').val(p.duration || '');
+            $('#file_url').val(p.file_url || '');
+            $('#file_size').val(p.file_size || '');
             
             if (p.file_url) {
-                $('#pdf-name').text('Current PDF');
+                const parts = p.file_url.split('/');
+                $('#pdf-name').text(parts[parts.length - 1] || 'Current PDF');
+                $('#pdf-link').attr('href', p.file_url);
                 $('#pdf-preview').show();
+            } else {
+                $('#pdf-preview').hide();
             }
 
-            $('#form-heading').text('Edit Priority Setting');
+            $('#form-heading').text('Edit Priority Setting (ID: ' + p.id + ')');
             $('#save-btn').text('Update Priority Setting');
-            window.scrollTo(0, 0);
+            $('html, body').animate({ scrollTop: $('#priority-form-container').offset().top - 40 }, 300);
         });
 
         $(document).on('click', '.delete-btn', function() {
-            if(!confirm('Delete this setting?')) return;
+            const id = $(this).data('id');
+            if(!confirm('Are you sure you want to delete this priority setting?')) return;
             $.ajax({
-                url: API_BASE + '/delete/' + $(this).data('id'),
-                method: 'DELETE',
+                url: API_BASE + '/delete/' + id,
+                method: 'POST',
                 beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
-                success: loadPriority
+                success: function() {
+                    loadPriority();
+                    if ($('#setting-id').val() == id) {
+                        clearForm();
+                    }
+                },
+                error: function() {
+                    alert('Failed to delete priority setting');
+                }
             });
         });
 

@@ -14,6 +14,7 @@ function custom_setup_database_tables() {
         id mediumint(9) NOT NULL AUTO_INCREMENT,
         project_name varchar(255) NOT NULL,
         tool_name varchar(255) DEFAULT '',
+        year varchar(50) DEFAULT '',
         modules text DEFAULT '[]',
         cover_image varchar(255) DEFAULT '',
         pdfs text DEFAULT '[]',

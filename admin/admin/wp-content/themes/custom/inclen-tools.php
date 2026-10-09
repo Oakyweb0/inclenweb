@@ -1,5 +1,5 @@
 <?php
-// Manager for INCLEN Tools
+// Manager for INCLEN Tools (Open Access INCLEN Tools)
 
 // Registration for REST API
 add_action('rest_api_init', function () {
@@ -99,11 +99,11 @@ function add_inclen_tool($request) {
 
         $wpdb->insert($table, [
             'project_name' => sanitize_text_field($params['project_name'] ?? ''),
-            'tool_name' => sanitize_text_field($params['tool_name'] ?? ''),
-            'year' => sanitize_text_field($params['year'] ?? ''),
-            'modules' => $params['modules'] ?? '[]',
-            'cover_image' => esc_url_raw($params['cover_image'] ?? ''),
-            'pdfs' => $params['pdfs'] ?? '[]'
+            'tool_name'    => sanitize_text_field($params['tool_name'] ?? ''),
+            'year'         => sanitize_text_field($params['year'] ?? ''),
+            'modules'      => is_string($params['modules'] ?? '') ? ($params['modules'] ?? '[]') : json_encode($params['modules'] ?? []),
+            'cover_image'  => esc_url_raw($params['cover_image'] ?? ''),
+            'pdfs'         => is_string($params['pdfs'] ?? '') ? ($params['pdfs'] ?? '[]') : json_encode($params['pdfs'] ?? [])
         ]);
 
         return ['status' => 'success', 'id' => $wpdb->insert_id];
@@ -116,18 +116,18 @@ function update_inclen_tool($request) {
     try {
         global $wpdb;
         $table = $wpdb->prefix . 'inclen_tools';
-        $id = $request['id'];
+        $id = intval($request['id']);
         $params = $request->get_json_params();
 
         if (!$params) return new WP_Error('invalid_json', 'Invalid JSON body', ['status' => 400]);
 
         $wpdb->update($table, [
             'project_name' => sanitize_text_field($params['project_name'] ?? ''),
-            'tool_name' => sanitize_text_field($params['tool_name'] ?? ''),
-            'year' => sanitize_text_field($params['year'] ?? ''),
-            'modules' => $params['modules'] ?? '[]',
-            'cover_image' => esc_url_raw($params['cover_image'] ?? ''),
-            'pdfs' => $params['pdfs'] ?? '[]'
+            'tool_name'    => sanitize_text_field($params['tool_name'] ?? ''),
+            'year'         => sanitize_text_field($params['year'] ?? ''),
+            'modules'      => is_string($params['modules'] ?? '') ? ($params['modules'] ?? '[]') : json_encode($params['modules'] ?? []),
+            'cover_image'  => esc_url_raw($params['cover_image'] ?? ''),
+            'pdfs'         => is_string($params['pdfs'] ?? '') ? ($params['pdfs'] ?? '[]') : json_encode($params['pdfs'] ?? [])
         ], ['id' => $id]);
 
         return ['status' => 'success'];
@@ -139,7 +139,7 @@ function update_inclen_tool($request) {
 function delete_inclen_tool($request) {
     global $wpdb;
     $table = $wpdb->prefix . 'inclen_tools';
-    $wpdb->delete($table, ['id' => $request['id']]);
+    $wpdb->delete($table, ['id' => intval($request['id'])]);
     return ['status' => 'deleted'];
 }
 
@@ -165,12 +165,6 @@ function inclen_tools_admin_page() {
             padding: 40px;
             margin: 20px 0;
             border: 1px solid #e5e7eb;
-        }
-        .inclen-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 30px;
-            color: #111827;
         }
         .form-row {
             display: flex;
@@ -239,6 +233,7 @@ function inclen_tools_admin_page() {
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
         }
         .btn-save {
             background: #00558f !important;
@@ -270,10 +265,10 @@ function inclen_tools_admin_page() {
     </style>
 
     <div class="wrap">
-        <h1>INCLEN Tools Manager</h1>
+        <h1>Research Tools Manager (Open Access INCLEN Tools)</h1>
 
         <div class="inclen-card" id="tool-form-container">
-            <h2 style="font-size: 18px; margin-bottom: 30px;">Add New INCLEN Tool</h2>
+            <h2 id="tool-form-title" style="font-size: 18px; margin-bottom: 30px;">Add New INCLEN Tool</h2>
             
             <input type="hidden" id="tool-id" value="">
 
@@ -313,7 +308,7 @@ function inclen_tools_admin_page() {
                 <!-- Modules will be added here -->
             </div>
 
-            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; pt: 20px;">
+            <div style="margin-top: 40px; border-top: 1px solid #f3f4f6; padding-top: 20px;">
                 <button type="button" class="btn-save" id="save-tool-btn">Save Tool</button>
                 <button type="button" class="btn-clear" id="clear-form-btn">Clear Form</button>
             </div>
@@ -323,10 +318,12 @@ function inclen_tools_admin_page() {
         <table class="wp-list-table widefat fixed striped" style="border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
             <thead>
                 <tr>
+                    <th style="padding: 15px; width: 60px;">Sr No</th>
                     <th style="padding: 15px;">Project Name</th>
                     <th style="padding: 15px;">Tool Name</th>
                     <th style="padding: 15px;">Year</th>
-                    <th style="padding: 15px; width: 150px;">Actions</th>
+                    <th style="padding: 15px;">PDFs / Modules</th>
+                    <th style="padding: 15px; width: 160px;">Actions</th>
                 </tr>
             </thead>
             <tbody id="tools-list">
@@ -340,6 +337,7 @@ function inclen_tools_admin_page() {
         const API_BASE = '<?php echo rest_url('inclen-tools/v1'); ?>';
         const WP_NONCE = '<?php echo wp_create_nonce('wp_rest'); ?>';
         
+        let toolsMap = {};
         let mainPdfs = [];
         let modules = [];
 
@@ -350,8 +348,8 @@ function inclen_tools_admin_page() {
                 container.append(`
                     <div class="pdf-preview-item">
                         <span class="dashicons dashicons-pdf" style="color: #ef4444;"></span>
-                        <span>${pdf.name}</span>
-                        <span class="remove-pdf dashicons dashicons-no-alt" data-index="${index}"></span>
+                        <a href="${pdf.url}" target="_blank" style="text-decoration:none; color:#2563eb;">${pdf.name || 'PDF Document'}</a>
+                        <span class="remove-pdf dashicons dashicons-no-alt" data-index="${index}" style="cursor:pointer;" title="Remove"></span>
                     </div>
                 `);
             });
@@ -362,24 +360,23 @@ function inclen_tools_admin_page() {
             container.empty();
             modules.forEach((module, mIndex) => {
                 let pdfHtml = '';
-                if (module.pdfs) {
-                    module.pdfs.forEach((pdf, pIndex) => {
-                        pdfHtml += `
-                            <div class="pdf-preview-item">
-                                <span class="dashicons dashicons-pdf" style="color: #ef4444;"></span>
-                                <span>${pdf.name}</span>
-                                <span class="remove-module-pdf dashicons dashicons-no-alt" data-mindex="${mIndex}" data-pindex="${pIndex}"></span>
-                            </div>
-                        `;
-                    });
-                }
+                const modPdfs = Array.isArray(module.pdfs) ? module.pdfs : [];
+                modPdfs.forEach((pdf, pIndex) => {
+                    pdfHtml += `
+                        <div class="pdf-preview-item">
+                            <span class="dashicons dashicons-pdf" style="color: #ef4444;"></span>
+                            <a href="${pdf.url}" target="_blank" style="text-decoration:none; color:#2563eb;">${pdf.name || 'Module PDF'}</a>
+                            <span class="remove-module-pdf dashicons dashicons-no-alt" data-mindex="${mIndex}" data-pindex="${pIndex}" style="cursor:pointer;" title="Remove"></span>
+                        </div>
+                    `;
+                });
 
                 container.append(`
                     <div class="module-item" data-index="${mIndex}">
-                        <span class="remove-module dashicons dashicons-no-alt" data-index="${mIndex}"></span>
+                        <span class="remove-module dashicons dashicons-no-alt" data-index="${mIndex}" title="Remove Module"></span>
                         <div class="form-row">
                             <div class="form-label">Module Name</div>
-                            <input type="text" class="form-input module-name" value="${module.name || ''}" placeholder="Enter module name" data-index="${mIndex}">
+                            <input type="text" class="form-input module-name" value="${(module.name || '').replace(/"/g, '&quot;')}" placeholder="Enter module name" data-index="${mIndex}">
                         </div>
                         <div class="form-row" style="margin-bottom: 0;">
                             <div class="form-label">Module PDF</div>
@@ -397,6 +394,11 @@ function inclen_tools_admin_page() {
 
         // Add Module
         $('#add-module-btn').click(function() {
+            // sync current inputs before adding
+            $('.module-name').each(function() {
+                const idx = $(this).data('index');
+                if (modules[idx]) modules[idx].name = $(this).val();
+            });
             modules.push({ name: '', pdfs: [] });
             renderModules();
         });
@@ -404,6 +406,10 @@ function inclen_tools_admin_page() {
         // Remove Module
         $(document).on('click', '.remove-module', function() {
             const index = $(this).data('index');
+            $('.module-name').each(function() {
+                const idx = $(this).data('index');
+                if (modules[idx]) modules[idx].name = $(this).val();
+            });
             modules.splice(index, 1);
             renderModules();
         });
@@ -411,7 +417,7 @@ function inclen_tools_admin_page() {
         // Update Module Name
         $(document).on('input', '.module-name', function() {
             const index = $(this).data('index');
-            modules[index].name = $(this).val();
+            if (modules[index]) modules[index].name = $(this).val();
         });
 
         // Main PDF Upload
@@ -439,8 +445,8 @@ function inclen_tools_admin_page() {
                         renderMainPdfs();
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     },
-                    error: function() {
-                        alert('Upload failed');
+                    error: function(xhr) {
+                        alert('Upload failed: ' + (xhr.responseJSON?.message || 'Server error'));
                         btn.prop('disabled', false).html('<span class="dashicons dashicons-upload"></span> Upload PDF');
                     }
                 });
@@ -455,6 +461,12 @@ function inclen_tools_admin_page() {
             fileInput.on('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
+
+                // sync names first
+                $('.module-name').each(function() {
+                    const idx = $(this).data('index');
+                    if (modules[idx]) modules[idx].name = $(this).val();
+                });
 
                 const formData = new FormData();
                 formData.append('file', file);
@@ -474,8 +486,8 @@ function inclen_tools_admin_page() {
                         modules[mIndex].pdfs.push({ name: file.name, url: res.url });
                         renderModules();
                     },
-                    error: function() {
-                        alert('Upload failed');
+                    error: function(xhr) {
+                        alert('Upload failed: ' + (xhr.responseJSON?.message || 'Server error'));
                         renderModules();
                     }
                 });
@@ -483,18 +495,21 @@ function inclen_tools_admin_page() {
             fileInput.click();
         });
 
-        // Remove PDF
+        // Remove Main PDF
         $(document).on('click', '.remove-pdf', function() {
             const index = $(this).data('index');
             mainPdfs.splice(index, 1);
             renderMainPdfs();
         });
 
+        // Remove Module PDF
         $(document).on('click', '.remove-module-pdf', function() {
             const mIndex = $(this).data('mindex');
             const pIndex = $(this).data('pindex');
-            modules[mIndex].pdfs.splice(pIndex, 1);
-            renderModules();
+            if (modules[mIndex] && modules[mIndex].pdfs) {
+                modules[mIndex].pdfs.splice(pIndex, 1);
+                renderModules();
+            }
         });
 
         // Load Tools
@@ -502,39 +517,67 @@ function inclen_tools_admin_page() {
             $.get(API_BASE + '/all', function(response) {
                 const list = $('#tools-list');
                 list.empty();
-                if (response.value) {
-                    response.value.forEach(tool => {
-                        list.append(`
-                            <tr>
-                                <td style="padding: 15px;">${tool.project_name}</td>
-                                <td style="padding: 15px;">${tool.tool_name}</td>
-                                <td style="padding: 15px;">${tool.year || '-'}</td>
-                                <td style="padding: 15px;">
-                                    <button class="button edit-btn" data-tool='${JSON.stringify(tool)}'>Edit</button>
-                                    <button class="button delete-btn" data-id="${tool.id}" style="color: red;">Delete</button>
-                                </td>
-                            </tr>
-                        `);
-                    });
+                toolsMap = {};
+                const data = response.value || [];
+                if (data.length === 0) {
+                    list.append('<tr><td colspan="6" style="padding:20px; text-align:center; color:#888;">No tools found.</td></tr>');
+                    return;
                 }
+                data.forEach((tool, index) => {
+                    toolsMap[tool.id] = tool;
+                    let pdfCount = 0;
+                    let modCount = 0;
+                    try {
+                        const parsedPdfs = typeof tool.pdfs === 'string' ? JSON.parse(tool.pdfs || '[]') : (tool.pdfs || []);
+                        pdfCount = parsedPdfs.length;
+                    } catch(e) {}
+                    try {
+                        const parsedMods = typeof tool.modules === 'string' ? JSON.parse(tool.modules || '[]') : (tool.modules || []);
+                        modCount = parsedMods.length;
+                    } catch(e) {}
+
+                    list.append(`
+                        <tr>
+                            <td style="padding: 15px;">${index + 1}</td>
+                            <td style="padding: 15px;"><strong>${$('<div>').text(tool.project_name || '').html()}</strong></td>
+                            <td style="padding: 15px;">${$('<div>').text(tool.tool_name || '-').html()}</td>
+                            <td style="padding: 15px;">${$('<div>').text(tool.year || '-').html()}</td>
+                            <td style="padding: 15px;">
+                                <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${pdfCount} PDFs</span>
+                                <span class="badge" style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600; margin-left:4px;">${modCount} Modules</span>
+                            </td>
+                            <td style="padding: 15px;">
+                                <button class="button edit-btn" data-id="${tool.id}">Edit</button>
+                                <button class="button delete-btn" data-id="${tool.id}" style="color: #ef4444; border-color:#fca5a5;">Delete</button>
+                            </td>
+                        </tr>
+                    `);
+                });
             });
         }
 
         loadTools();
 
-        // Save Tool
+        // Save Tool (Add or Update)
         $('#save-tool-btn').click(function() {
+            // sync module names
+            $('.module-name').each(function() {
+                const idx = $(this).data('index');
+                if (modules[idx]) modules[idx].name = $(this).val();
+            });
+
             const id = $('#tool-id').val();
             const data = {
-                project_name: $('#project-name').val(),
-                tool_name: $('#tool-name').val(),
-                year: $('#tool-year').val(),
+                project_name: $('#project-name').val().trim(),
+                tool_name: $('#tool-name').val().trim(),
+                year: $('#tool-year').val().trim(),
                 pdfs: JSON.stringify(mainPdfs),
                 modules: JSON.stringify(modules)
             };
 
             if (!data.project_name) {
                 alert('Project Name is required');
+                $('#project-name').focus();
                 return;
             }
 
@@ -549,14 +592,14 @@ function inclen_tools_admin_page() {
                 contentType: 'application/json',
                 beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
                 success: function() {
-                    alert('Tool saved successfully');
+                    alert(id ? 'Tool updated successfully!' : 'Tool added successfully!');
                     clearForm();
                     loadTools();
-                    btn.prop('disabled', false).text('Save Tool');
+                    btn.prop('disabled', false).text(id ? 'Update Tool' : 'Save Tool');
                 },
                 error: function(xhr) {
-                    alert('Error: ' + xhr.responseText);
-                    btn.prop('disabled', false).text('Save Tool');
+                    alert('Error: ' + (xhr.responseJSON?.message || xhr.responseText || 'Failed to save'));
+                    btn.prop('disabled', false).text(id ? 'Update Tool' : 'Save Tool');
                 }
             });
         });
@@ -570,41 +613,61 @@ function inclen_tools_admin_page() {
             modules = [];
             renderMainPdfs();
             renderModules();
+            $('#tool-form-title').text('Add New INCLEN Tool');
+            $('#save-tool-btn').text('Save Tool');
         }
 
         $('#clear-form-btn').click(clearForm);
 
         // Edit
         $(document).on('click', '.edit-btn', function() {
-            const tool = $(this).data('tool');
+            const id = $(this).data('id');
+            const tool = toolsMap[id];
+            if (!tool) return;
+
             $('#tool-id').val(tool.id);
-            $('#project-name').val(tool.project_name);
-            $('#tool-name').val(tool.tool_name);
+            $('#project-name').val(tool.project_name || '');
+            $('#tool-name').val(tool.tool_name || '');
             $('#tool-year').val(tool.year || '');
             
             try {
-                mainPdfs = JSON.parse(tool.pdfs || '[]');
-                modules = JSON.parse(tool.modules || '[]');
+                mainPdfs = typeof tool.pdfs === 'string' ? JSON.parse(tool.pdfs || '[]') : (tool.pdfs || []);
+                if (!Array.isArray(mainPdfs)) mainPdfs = [];
             } catch(e) {
                 mainPdfs = [];
+            }
+
+            try {
+                modules = typeof tool.modules === 'string' ? JSON.parse(tool.modules || '[]') : (tool.modules || []);
+                if (!Array.isArray(modules)) modules = [];
+            } catch(e) {
                 modules = [];
             }
             
             renderMainPdfs();
             renderModules();
-            window.scrollTo(0, 0);
+
+            $('#tool-form-title').text('Edit INCLEN Tool (ID: ' + tool.id + ')');
+            $('#save-tool-btn').text('Update Tool');
+            $('html, body').animate({ scrollTop: $('#tool-form-container').offset().top - 40 }, 300);
         });
 
         // Delete
         $(document).on('click', '.delete-btn', function() {
+            const id = $(this).data('id');
             if (confirm('Are you sure you want to delete this tool?')) {
-                const id = $(this).data('id');
                 $.ajax({
                     url: API_BASE + '/delete/' + id,
                     method: 'POST',
                     beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', WP_NONCE); },
                     success: function() {
                         loadTools();
+                        if ($('#tool-id').val() == id) {
+                            clearForm();
+                        }
+                    },
+                    error: function() {
+                        alert('Failed to delete tool');
                     }
                 });
             }
