@@ -101,7 +101,7 @@ function get_default_menu_structure() {
             'children' => [
                 ['key' => 'work_area', 'label' => 'Area of Work', 'href' => '/area-of-work', 'visible' => true, 'subcategory' => 'Focus Areas', 'description' => 'Explore our key focus areas and strategic impact domains.'],
                 ['key' => 'work_research', 'label' => 'Research Projects', 'href' => '/research', 'visible' => true, 'subcategory' => 'Focus Areas', 'description' => 'Cutting-edge health research, synthesis and analysis.'],
-                ['key' => 'work_somaarth', 'label' => 'Somaarth Sites', 'href' => '/somarth-sites', 'visible' => true, 'subcategory' => 'Key Initiatives', 'description' => 'Demographic Development & Environmental Surveillance.'],
+                ['key' => 'work_somaarth', 'label' => 'Somaarth Sites', 'href' => '/somaarth-sites', 'visible' => true, 'subcategory' => 'Key Initiatives', 'description' => 'Demographic Development & Environmental Surveillance.'],
                 ['key' => 'work_capacity', 'label' => 'Capacity Building', 'href' => '/capacity-building', 'visible' => true, 'subcategory' => 'Key Initiatives', 'description' => 'Strengthening healthcare systems and leadership capabilities.'],
                 ['key' => 'work_engagement', 'label' => 'Engagement & Advocacy', 'href' => '/engagement-advocacy', 'visible' => true, 'subcategory' => 'Outreach', 'description' => 'Policy advocacy and multi-stakeholder engagement.'],
                 ['key' => 'work_community', 'label' => 'Community Activities', 'href' => '/community-activities', 'visible' => true, 'subcategory' => 'Outreach', 'description' => 'Community activities and engagement.']

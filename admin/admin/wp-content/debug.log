@@ -1977,3 +1977,9 @@ Stack trace:
 [09-Oct-2026 10:33:16 UTC] PHP Parse error:  Unclosed '{' on line 6 in D:\xampp\htdocs\Ratan_Sir\inclentrust\admin\admin\wp-content\themes\custom\setup-tables.php on line 1354
 [09-Oct-2026 10:34:00 UTC] WordPress database error Unknown column 'sort_order' in 'order clause' for query SELECT * FROM wp_academic_association ORDER BY sort_order ASC, id ASC made by require('wp-blog-header.php'), wp, WP->main, WP->parse_request, do_action_ref_array('parse_request'), WP_Hook->do_action, WP_Hook->apply_filters, rest_api_loaded, WP_REST_Server->serve_request, WP_REST_Server->dispatch, WP_REST_Server->respond_to_request, get_all_academic_associations
 [09-Oct-2026 10:34:33 UTC] WordPress database error Unknown column 'sort_order' in 'order clause' for query SELECT * FROM wp_academic_association ORDER BY sort_order ASC, id ASC made by require('wp-blog-header.php'), wp, WP->main, WP->parse_request, do_action_ref_array('parse_request'), WP_Hook->do_action, WP_Hook->apply_filters, rest_api_loaded, WP_REST_Server->serve_request, WP_REST_Server->dispatch, WP_REST_Server->respond_to_request, get_all_academic_associations
+[09-Oct-2026 12:02:02 UTC] Automatic updates starting...
+[09-Oct-2026 12:02:03 UTC]   Automatic plugin updates starting...
+[09-Oct-2026 12:02:03 UTC]   Automatic plugin updates complete.
+[09-Oct-2026 12:02:04 UTC]   Automatic theme updates starting...
+[09-Oct-2026 12:02:04 UTC]   Automatic theme updates complete.
+[09-Oct-2026 12:02:04 UTC] Automatic updates complete.
