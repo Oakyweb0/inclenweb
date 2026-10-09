@@ -2,8 +2,8 @@
 add_action('admin_menu', function () {
     add_submenu_page(
         'group-news',
-        'Heading Manager',
-        'Headings',
+        'Headlines',
+        'Headlines',
         'manage_options',
         'heading-manager',
         'heading_manager_page'

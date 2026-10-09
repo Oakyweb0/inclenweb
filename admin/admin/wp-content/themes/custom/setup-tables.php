@@ -407,7 +407,53 @@ function custom_setup_database_tables() {
     ) $charset_collate;";
     dbDelta($sql_news);
 
-    // 29. Contact & Site Information Table
+    // 29. Fellowships Table
+    $table_fellowships = $wpdb->prefix . 'fellowships';
+    $sql_fellowships = "CREATE TABLE $table_fellowships (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        title varchar(255) NOT NULL,
+        short_description text DEFAULT '',
+        subtitle varchar(255) DEFAULT '',
+        description longtext DEFAULT '',
+        duration varchar(100) DEFAULT '',
+        who_apply varchar(255) DEFAULT '',
+        image varchar(500) DEFAULT '',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_fellowships);
+
+    // 30. Academic Association Table
+    $table_academic_assoc = $wpdb->prefix . 'academic_association';
+    $sql_academic_assoc = "CREATE TABLE $table_academic_assoc (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        program_type varchar(100) NOT NULL DEFAULT 'phd',
+        title varchar(255) NOT NULL,
+        tag varchar(255) DEFAULT '',
+        description longtext DEFAULT '',
+        eligibility longtext DEFAULT '',
+        duration varchar(100) DEFAULT '',
+        pdf_url varchar(500) DEFAULT '',
+        image_url varchar(500) DEFAULT '',
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_academic_assoc);
+
+    // 31. Partner Institutes Table
+    $table_partner_inst = $wpdb->prefix . 'partner_institutes';
+    $sql_partner_inst = "CREATE TABLE $table_partner_inst (
+        id mediumint(9) NOT NULL AUTO_INCREMENT,
+        institute_name varchar(255) NOT NULL,
+        institute_logo varchar(500) DEFAULT '',
+        website_url varchar(500) DEFAULT '',
+        sort_order int(11) DEFAULT 0,
+        created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+        PRIMARY KEY  (id)
+    ) $charset_collate;";
+    dbDelta($sql_partner_inst);
+
+    // 32. Contact & Site Information Table
     $table_contact = $wpdb->prefix . 'contact_info';
     $sql_contact = "CREATE TABLE $table_contact (
         id mediumint(9) NOT NULL AUTO_INCREMENT,

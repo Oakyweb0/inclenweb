@@ -14,8 +14,8 @@ if (file_exists(__DIR__ . '/vendor/autoload.php')) {
 add_action('admin_menu', function () {
     add_submenu_page(
         'group-news',
-        'News Manager',
-        'News Manager',
+        'News',
+        'News',
         'manage_options',
         'news-manager',
         'news_manager_page'

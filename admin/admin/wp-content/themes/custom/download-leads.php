@@ -1,14 +1,13 @@
 <?php
-// Register menu for Download Leads (perhaps under a new menu or under Tools)
+// Register menu for Download Leads under Resources
 add_action('admin_menu', function () {
-    add_menu_page(
-        'PDF Download Leads',
+    add_submenu_page(
+        'group-resources',
+        'PDF Leads',
         'PDF Leads',
         'manage_options',
         'download-leads',
-        'download_leads_page',
-        'dashicons-download',
-        30
+        'download_leads_page'
     );
 });
 

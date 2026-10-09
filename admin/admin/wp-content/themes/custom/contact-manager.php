@@ -5,14 +5,13 @@
 
 // Register Admin Menu
 add_action('admin_menu', function () {
-    add_menu_page(
-        'Contact & Site Info',
-        'Contact Info',
+    add_submenu_page(
+        'group-contact',
+        'Contact US',
+        'Contact US',
         'manage_options',
         'contact-manager',
-        'contact_manager_page',
-        'dashicons-location-alt',
-        31
+        'contact_manager_page'
     );
 });
 

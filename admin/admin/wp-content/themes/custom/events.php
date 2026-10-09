@@ -2,8 +2,8 @@
 add_action('admin_menu', function () {
     add_submenu_page(
         'group-news',
-        'Event',
-        'Event',
+        'Events',
+        'Events',
         'manage_options',
         'events-manager',
         'events_manager_page'

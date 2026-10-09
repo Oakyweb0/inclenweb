@@ -146,9 +146,9 @@ function delete_inclen_tool($request) {
 // Admin Menu and UI
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-research',
-        'INCLEN Tools Manager',
-        'INCLEN Tools',
+        'group-resources',
+        'Research Tools',
+        'Research Tools',
         'manage_options',
         'inclen-tools',
         'inclen_tools_admin_page'

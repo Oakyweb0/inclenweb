@@ -1,9 +1,9 @@
 <?php
 add_action('admin_menu', function () {
     add_submenu_page(
-        'group-team',
-        'Publications Manager',
-        'Publications',
+        'group-resources',
+        'All Publications',
+        'All Publications',
         'manage_options',
         'publications-manager',
         'publications_manager_page'

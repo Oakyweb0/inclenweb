@@ -1,5 +1,6 @@
 <?php
 add_action('admin_menu', function () {
+    // Under Our Impact
     add_submenu_page(
         'group-our-impact',
         'Partners',
@@ -7,6 +8,25 @@ add_action('admin_menu', function () {
         'manage_options',
         'partners-manager',
         'partners_manager_page'
+    );
+
+    // Under Get Involved
+    add_submenu_page(
+        'group-get-involved',
+        'Research Partnership',
+        'Research Partnership',
+        'manage_options',
+        'research-partnership-manager',
+        'research_partnerships_page'
+    );
+
+    add_submenu_page(
+        'group-get-involved',
+        'Industry Partnership',
+        'Industry Partnership',
+        'manage_options',
+        'industry-partnership-manager',
+        'industry_partnerships_page'
     );
 });
 

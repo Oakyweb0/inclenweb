@@ -56,10 +56,12 @@ function custom_register_grouped_menus() {
     add_menu_page('About', 'About', 'manage_options', 'group-about', '', 'dashicons-info', 21);
     add_menu_page('Our Work', 'Our Work', 'manage_options', 'group-our-work', '', 'dashicons-portfolio', 22);
     add_menu_page('Our Impact', 'Our Impact', 'manage_options', 'group-our-impact', '', 'dashicons-chart-pie', 23);
-    add_menu_page('Insight', 'Insight', 'manage_options', 'group-news', '', 'dashicons-megaphone', 25);
-    add_menu_page('Careers', 'Careers', 'manage_options', 'group-careers', '', 'dashicons-businessperson', 26);
+    add_menu_page('Careers', 'Careers', 'manage_options', 'group-careers', '', 'dashicons-businessperson', 24);
+    add_menu_page('Get Involved', 'Get Involved', 'manage_options', 'group-get-involved', '', 'dashicons-networking', 25);
+    add_menu_page('Insights', 'Insights', 'manage_options', 'group-news', '', 'dashicons-megaphone', 26);
     add_menu_page('Resources', 'Resources', 'manage_options', 'group-resources', '', 'dashicons-groups', 27);
-    add_menu_page('Projects & Tools', 'Projects & Tools', 'manage_options', 'group-research', '', 'dashicons-admin-tools', 28);
+    add_menu_page('Contact US', 'Contact US', 'manage_options', 'group-contact', '', 'dashicons-location-alt', 28);
+    add_menu_page('Footer', 'Footer', 'manage_options', 'group-footer', '', 'dashicons-admin-generic', 29);
 }
 add_action('admin_menu', 'custom_register_grouped_menus', 9);
 
@@ -70,17 +72,19 @@ function custom_make_menus_unclickable() {
         #toplevel_page_group-about > a,
         #toplevel_page_group-our-work > a,
         #toplevel_page_group-our-impact > a,
-        #toplevel_page_group-news > a,
         #toplevel_page_group-careers > a,
+        #toplevel_page_group-get-involved > a,
+        #toplevel_page_group-news > a,
         #toplevel_page_group-resources > a,
-        #toplevel_page_group-research > a {
+        #toplevel_page_group-contact > a,
+        #toplevel_page_group-footer > a {
             pointer-events: none !important;
             cursor: default !important;
         }
     </style>
     <script>
         jQuery(document).ready(function($) {
-            $('#toplevel_page_group-about > a, #toplevel_page_group-our-work > a, #toplevel_page_group-our-impact > a, #toplevel_page_group-news > a, #toplevel_page_group-careers > a, #toplevel_page_group-resources > a, #toplevel_page_group-research > a').on('click', function(e) {
+            $('#toplevel_page_group-about > a, #toplevel_page_group-our-work > a, #toplevel_page_group-our-impact > a, #toplevel_page_group-careers > a, #toplevel_page_group-get-involved > a, #toplevel_page_group-news > a, #toplevel_page_group-resources > a, #toplevel_page_group-contact > a, #toplevel_page_group-footer > a').on('click', function(e) {
                 e.preventDefault();
             });
         });
@@ -96,10 +100,12 @@ function custom_organize_submenus() {
     remove_submenu_page('group-about', 'group-about');
     remove_submenu_page('group-our-work', 'group-our-work');
     remove_submenu_page('group-our-impact', 'group-our-impact');
-    remove_submenu_page('group-news', 'group-news');
     remove_submenu_page('group-careers', 'group-careers');
+    remove_submenu_page('group-get-involved', 'group-get-involved');
+    remove_submenu_page('group-news', 'group-news');
     remove_submenu_page('group-resources', 'group-resources');
-    remove_submenu_page('group-research', 'group-research');
+    remove_submenu_page('group-contact', 'group-contact');
+    remove_submenu_page('group-footer', 'group-footer');
 
     // Desired order for About
     $about_order = [
@@ -132,6 +138,50 @@ function custom_organize_submenus() {
         'transforming-lives'
     ];
 
+    // Desired order for Careers
+    $careers_order = [
+        'current-opening-manager',
+        'fellowship-manager',
+        'internship-manager'
+    ];
+
+    // Desired order for Get Involved
+    $involved_order = [
+        'academic-association-manager',
+        'research-partnership-manager',
+        'industry-partnership-manager'
+    ];
+
+    // Desired order for Insights
+    $insights_order = [
+        'news-manager',
+        'events-manager',
+        'announcement-manager',
+        'heading-manager'
+    ];
+
+    // Desired order for Resources
+    $resources_order = [
+        'publications-manager',
+        'annual-reports',
+        'newsletters',
+        'data-repository',
+        'inclen-tools',
+        'training-materials',
+        'download-leads'
+    ];
+
+    // Desired order for Contact US
+    $contact_order = [
+        'contact-manager'
+    ];
+
+    // Desired order for Footer
+    $footer_order = [
+        'partner-institutes-manager',
+        'navigation-settings'
+    ];
+
     $sort_group = function($parent_slug, $order_slugs) use (&$submenu) {
         if (!isset($submenu[$parent_slug])) return;
         $items = $submenu[$parent_slug];
@@ -154,6 +204,12 @@ function custom_organize_submenus() {
     $sort_group('group-about', $about_order);
     $sort_group('group-our-work', $work_order);
     $sort_group('group-our-impact', $impact_order);
+    $sort_group('group-careers', $careers_order);
+    $sort_group('group-get-involved', $involved_order);
+    $sort_group('group-news', $insights_order);
+    $sort_group('group-resources', $resources_order);
+    $sort_group('group-contact', $contact_order);
+    $sort_group('group-footer', $footer_order);
 }
 add_action('admin_menu', 'custom_organize_submenus', 999);
 
@@ -177,7 +233,9 @@ $managers = [
     'events.php',
     'headings.php',
     'current-openings.php',
+    'fellowship-manager.php',
     'internship-manager.php',
+    'academic-association-manager.php',
     'publications-manager.php',
     'governance-team-manager.php',
     'academic-collaborators.php',
@@ -197,6 +255,7 @@ $managers = [
     'navigation-manager.php',
     'newsletters-manager.php',
     'partners-manager.php',
+    'partner-institutes-manager.php',
     'priority-settings.php'
 ];
 

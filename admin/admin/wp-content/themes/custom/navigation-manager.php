@@ -3,16 +3,15 @@
  * Website Navigation Menu Visibility Manager
  */
 
-// Register Navigation settings page
+// Register Navigation settings page under Footer
 add_action('admin_menu', function () {
-    add_menu_page(
-        'Navigation Settings',
-        'Nav Settings',
+    add_submenu_page(
+        'group-footer',
+        'Option to add new menu',
+        'Option to add new menu',
         'manage_options',
         'navigation-settings',
-        'navigation_settings_page',
-        'dashicons-menu',
-        31
+        'navigation_settings_page'
     );
 });
 
