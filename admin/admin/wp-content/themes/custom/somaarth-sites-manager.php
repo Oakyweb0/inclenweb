@@ -112,11 +112,11 @@ function somaarth_sites_manager_page() {
         <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 24px 30px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h1 style="color: #fff; margin: 0 0 6px 0; font-size: 26px; font-weight: 700;">📍 Somaarth Sites Manager</h1>
+                    <h1 style="color: #fff; margin: 0 0 6px 0; font-size: 26px; font-weight: 700;">Somaarth Sites Manager</h1>
                     <p style="margin: 0; color: #94a3b8; font-size: 14px;">Manage surveillance sites (Palwal, Bareilly, Mawphlang), demographic stats, and facility information for <code>/somaarth-sites</code></p>
                 </div>
                 <button type="button" id="save-all-sites-btn" style="background: #ea580c; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4); transition: all 0.2s;">
-                    💾 Save Changes
+                    Save Changes
                 </button>
             </div>
         </div>
@@ -129,7 +129,7 @@ function somaarth_sites_manager_page() {
             ?>
             <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
                 <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; margin-bottom: 16px;">
-                    <h3 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 700;">🏛️ <?php echo esc_html($label); ?></h3>
+                    <h3 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: 700;"> <?php echo esc_html($label); ?></h3>
                     <span style="background: #ffedd5; color: #c2410c; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;">Active Site</span>
                 </div>
 
@@ -215,7 +215,7 @@ function somaarth_sites_manager_page() {
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                btn.text('💾 Save Changes').prop('disabled', false);
+                btn.text('Save Changes').prop('disabled', false);
                 $('#save-status-msg')
                     .css({ 'display': 'block', 'background': '#dcfce7', 'color': '#15803d', 'border': '1px solid #bbf7d0' })
                     .text('✓ Somaarth Sites updated successfully!')
@@ -223,10 +223,10 @@ function somaarth_sites_manager_page() {
                 setTimeout(function() { $('#save-status-msg').fadeOut(); }, 4000);
             })
             .catch(function(err) {
-                btn.text('💾 Save Changes').prop('disabled', false);
+                btn.text('Save Changes').prop('disabled', false);
                 $('#save-status-msg')
                     .css({ 'display': 'block', 'background': '#fee2e2', 'color': '#b91c1c', 'border': '1px solid #fecaca' })
-                    .text('❌ Error saving data: ' + err)
+                    .text('Error saving data: ' + err)
                     .fadeIn();
             });
         });
